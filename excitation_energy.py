@@ -77,11 +77,16 @@ for x in range(0,n_iter):
       B_Y_ijab = np.zeros((r+1,r+1))
       B_Y_ijav = np.zeros((r+1,r+1))
       B_Y_iuab = np.zeros((r+1,r+1))
-      
+      '''
       dict_t1[r] = ortho_t1
       dict_t2[r] = ortho_t2
       dict_So[r] = ortho_So
       dict_Sv[r] = ortho_Sv
+      '''
+      dict_t1[r] = norm_t1
+      dict_t2[r] = norm_t2
+      dict_So[r] = norm_So
+      dict_Sv[r] = norm_Sv
   
 ##------Diagrams of coupled cluster theory i.e AX with new t and s---------##
   
@@ -155,17 +160,17 @@ for x in range(0,n_iter):
   B_Y_iuab[r,r] = np.einsum('iuab,iuab',dict_Sv[r],dict_Y_iuab[r])
    
   B_total = B_Y_ia+B_Y_ijab+B_Y_iuab+B_Y_ijav
-  #print B_total
+  print B_total
 
 ##-------Diagonalization of the B matrix----------##
       
   w_total, vects_total = np.linalg.eig(B_total)
-  #print w_total
+  print w_total
+  print vects_total
  
 ##--Assigning the position of the lowest eigenvalue----##
 
   ind_min_wtotal = np.argmin(w_total)
-
 ##------Coefficient matrix corresponding to lowest eigenvalue-----##
     
   coeff_total = vects_total[:,ind_min_wtotal]
@@ -183,7 +188,6 @@ for x in range(0,n_iter):
     x_t2 += np.linalg.multi_dot([coeff_total[i],dict_t2[i]])
     x_So += np.linalg.multi_dot([coeff_total[i],dict_So[i]])
     x_Sv += np.linalg.multi_dot([coeff_total[i],dict_Sv[i]])
-  print x_t1
 
 ##------Formation of residual matrix--------##
   
@@ -213,26 +217,24 @@ for x in range(0,n_iter):
   So_2 = davidson.get_X(R_ijav,Do)
   Sv_2 = davidson.get_X(R_iuab,Dv)
 
-##--------Normalization of the new t and s------##
-
-  norm_t1 = t1_2/np.linalg.norm(t1_2)
-  norm_t2 = t2_2/np.linalg.norm(t2_2)
-  norm_So = So_2/np.linalg.norm(So_2)
-  norm_Sv = Sv_2/np.linalg.norm(Sv_2)
-
 ##------Schmidt orthogonalization----------##
-  
-  ortho_t1 = norm_t1 
-  ortho_t2 = norm_t2 
-  ortho_So = norm_So 
-  ortho_Sv = norm_Sv
-  
+  ortho_t1 = t1_2 
+  ortho_t2 = t2_2 
+  ortho_So = So_2 
+  ortho_Sv = Sv_2
+  ''' 
   for i in range(0,r+1):
     ortho_t1 += - np.einsum('ia,ia',dict_t1[i],norm_t1)*dict_t1[i]
     ortho_t2 += - np.einsum('ijab,ijab',dict_t2[i],norm_t2)*dict_t2[i]
     ortho_So += - np.einsum('ijav,ijav',dict_So[i],norm_So)*dict_So[i]
     ortho_Sv += - np.einsum('iuab,iuab',dict_Sv[i],norm_Sv)*dict_Sv[i]
-  
+  ''' 
+  for i in range(0,r+1):
+    ortho_t1 += - np.einsum('ia,ia',dict_t1[i],t1_2)*dict_t1[i]
+    ortho_t2 += - np.einsum('ijab,ijab',dict_t2[i],t2_2)*dict_t2[i]
+    ortho_So += - np.einsum('ijav,ijav',dict_So[i],So_2)*dict_So[i]
+    ortho_Sv += - np.einsum('iuab,iuab',dict_Sv[i],Sv_2)*dict_Sv[i]
+   
   for i in range(0,r+1):
     p = np.einsum('ia,ia',dict_t1[i],ortho_t1)
     q = np.einsum('ijab,ijab',dict_t2[i],ortho_t2)
@@ -241,12 +243,31 @@ for x in range(0,n_iter):
     y= p+q+s+t
     #print p,q,s,t
     #print y
-##-------updating value of X for the next iteration-------##
+  
+##--------Normalization of the new t and s------##
+  '''  
+  norm_t1 = t1_2/np.linalg.norm(t1_2)
+  norm_t2 = t2_2/np.linalg.norm(t2_2)
+  norm_So = So_2/np.linalg.norm(So_2)
+  norm_Sv = Sv_2/np.linalg.norm(Sv_2)
+  '''
+  norm_t1 = ortho_t1/np.linalg.norm(ortho_t1)
+  norm_t2 = ortho_t2/np.linalg.norm(ortho_t2)
+  norm_So = ortho_So/np.linalg.norm(ortho_So)
+  norm_Sv = ortho_Sv/np.linalg.norm(ortho_Sv)
+  
 
+##-------updating value of X for the next iteration-------##
+  '''
   dict_t1[r+1] = ortho_t1
   dict_t2[r+1] = ortho_t2
   dict_So[r+1] = ortho_So
   dict_Sv[r+1] = ortho_Sv
-   
+  '''
+  dict_t1[r+1] = norm_t1
+  dict_t2[r+1] = norm_t2
+  dict_So[r+1] = norm_So
+  dict_Sv[r+1] = norm_Sv
+     
   
    
