@@ -8,7 +8,7 @@ import amplitude
 import cc_symmetrize
 import cc_update
 import main
-
+##commenting here for git 
 ##------Import important values-------##
 
 t1=main.t1
