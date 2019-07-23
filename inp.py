@@ -10,7 +10,7 @@ O         -1.62893       -0.04138        0.37137
 H         -0.69803       -0.09168        0.09337
 H         -2.06663       -0.73498       -0.13663
 ''',                        
-basis = 'cc-pvdz',  
+basis = 'sto-3g',  
 symmetry = True)
 
 ##------Specify linear or non-linear-------##
@@ -20,7 +20,7 @@ calc = 'ICCSD'
 conv = 8
 
 ##------Specify number of iteration--------##
-n_iter = 200
+n_iter = 30
 
 ##------Specify DIIS-------------##
 diis = True
@@ -35,4 +35,4 @@ nfo = 0
 nfv = 0
 
 ##-----Specify no of steps after which linear combination has to be taken-----##
-n_davidson = 7
+n_davidson = 20

@@ -4,7 +4,7 @@ import inp
 
 def guess_X(occ,virt,o_act,v_act):
   t1_guess = np.zeros((occ,virt))
-  t1_guess[4,2] = 1.0
+  t1_guess[2,1] = 1.0
   t2_guess = np.zeros((occ,occ,virt,virt))
   So_guess = np.zeros((occ,occ,virt,o_act))
   Sv_guess = np.zeros((occ,v_act,virt,virt))
