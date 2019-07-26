@@ -156,20 +156,22 @@ for x in range(0,n_iter):
   if calc == 'CCSD':
     print "-----------CCSD------------"
     tau = cp.deepcopy(t2)
-    tau += np.einsum('ia,jb->ijab',t1,t1)
-    I_vv, I_oo, Ivvvv, Ioooo, Iovvo, Iovvo_2, Iovov,Iovov_2 = intermediates.initialize()
+    #tau += np.einsum('ia,jb->ijab',t1,t1)
+    I_vv, I_oo, Ivvvv, Ioooo, Iovvo, Iovvo_2, Iovov,Iovov_2,I_oovo, I_vovv = intermediates.initialize()
 
-    I_oo,I_vv,Ioooo,Iovvo,Iovvo_2,Iovov = intermediates.update_int(tau,t2,I_vv,I_oo,Ioooo,Iovvo,Iovvo_2,Iovov)
+    #I_oo,I_vv,Ioooo,Iovvo,Iovvo_2,Iovov = intermediates.update_int(tau,t2,I_vv,I_oo,Ioooo,Iovvo,Iovvo_2,Iovov)
 
     I1, I2 = intermediates.R_ia_intermediates(t1)
     R_ia = amplitude.singles(I1,I2,I_oo,I_vv,tau,t1,t2)
-    I_oo,I_vv,I_oovo,I_vovv,Ioooo_2,I_voov,Iovov_3,Iovvo_3,Iooov,I3=intermediates.singles_intermediates(t1,t2,tau,I_oo,I_vv,I2)
+    #I_oo,I_vv,I_oovo,I_vovv,Ioooo_2,I_voov,Iovov_3,Iovvo_3,Iooov,I3=intermediates.singles_intermediates(t1,t2,tau,I_oo,I_vv,I2)
     R_ijab = amplitude.doubles(I_oo,I_vv,Ivvvv,Ioooo,Iovvo,Iovvo_2,Iovov,Iovov_2,tau,t2)
-    R_ijab += amplitude.singles_n_doubles(t1,t2,tau,I_oovo,I_vovv,Iovov_3,Iovvo_3,Iooov,I3,Ioooo_2,I_voov)
-    R_ijab = amplitude.symmetrize(R_ijab)
+    #R_ijab += amplitude.singles_n_doubles(t1,t2,tau,I_oovo,I_vovv,Iovov_3,Iovvo_3,Iooov,I3,Ioooo_2,I_voov)
+    R_ijab = cc_symmetrize.symmetrize(R_ijab)
+    
     oldt2 = t2.copy()
     oldt1 = t1.copy()
-    eps_t, t1, t2 = amplitude.update_t1t2(R_ia,R_ijab,t1,t2)
+    eps_t, t1, t2 = cc_update.update_t1t2(R_ia,R_ijab,t1,t2)
+    
     if inp.diis == True:
       if x+1>max_diis:
         # Limit size of DIIS vector

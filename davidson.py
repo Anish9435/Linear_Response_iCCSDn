@@ -37,4 +37,5 @@ def get_residue(AX,w,X):  #formation of residual matrix
 def get_X(R,D):
   X = np.divide(R,D)
   return X
-
+ 
+  

@@ -8,13 +8,14 @@ import amplitude
 import cc_symmetrize
 import cc_update
 import main
+
 ##commenting here for git 
 ##------Import important values-------##
 
-t1=main.t1
-t2=main.t2
-So=main.So
-Sv=main.Sv
+t1 = main.t1
+t2 = main.t2
+So = main.So
+Sv = main.Sv
 occ = MP2.occ
 virt = MP2.virt
 o_act = inp.o_act
@@ -27,6 +28,7 @@ D2 = MP2.D2
 Do = MP2.Do
 Dv = MP2.Dv
 t1_new,t2_new,So_new,Sv_new = davidson.guess_X(occ,virt,o_act,v_act)
+#print np.einsum('ijab,ijab',t2,t2)
 
 ##-----------Initialization of Dictionaries for storing the values----------##
 
@@ -40,7 +42,17 @@ dict_t2 = {}
 #dict_So = {}
 #dict_Sv = {}
 
-##-----Storing the guess vectors in the directory-----##
+##-----Projecting out the ground state X values-----##
+
+factor_t1 = (np.eye((occ*virt),dtype=float)-np.outer(t1,t1))
+t1_proj_out = np.dot(factor_t1,np.reshape(t1_new,((occ*virt),1)))
+t1_new = cp.deepcopy(np.reshape(t1_proj_out,(occ,virt))) 
+
+factor_t2 = (np.eye((occ*occ*virt*virt),dtype=float)-np.outer(t2,t2))
+t2_proj_out = np.dot(factor_t2,np.reshape(t2_new,((occ*occ*virt*virt),1)))
+t2_new = cp.deepcopy(np.reshape(t2_proj_out,(occ,occ,virt,virt))) 
+
+##-----Storing the values in the dictionary--------##
 
 dict_t1[0] = t1_new
 dict_t2[0] = t2_new
@@ -94,6 +106,7 @@ for x in range(0,n_iter):
 ##------Diagrams of coupled cluster theory i.e AX with new t and s---------##
   
   tau = cp.deepcopy(dict_t2[r]) 
+  
   I_vv, I_oo, Ivvvv, Ioooo, Iovvo, Iovvo_2, Iovov,Iovov_2, I_oovo, I_vovv = intermediates.initialize()
   I1, I2 = intermediates.R_ia_intermediates(t1)
   #I1, I2 = intermediates.R_ia_intermediates(dict_t1[r])
@@ -173,7 +186,7 @@ for x in range(0,n_iter):
 ##-------Diagonalization of the B matrix----------##
       
   w_total, vects_total = np.linalg.eig(B_total)
- #print w_total
+  print w_total
  #print vects_total
  
 ##--Assigning the position of the lowest eigenvalue----##
@@ -182,7 +195,7 @@ for x in range(0,n_iter):
 ##------Coefficient matrix corresponding to lowest eigenvalue-----##
     
   coeff_total = vects_total[:,ind_min_wtotal]
- #print coeff_total
+  #print coeff_total
 
 ##------Linear Combination--------------##
 
@@ -200,9 +213,10 @@ for x in range(0,n_iter):
 
   norm_1 = np.linalg.norm(x_t1)
   norm_2 = np.linalg.norm(x_t2)
-  if (norm_1 > 1e-12):
+  
+  if (norm_1 > 1e-9):
     x_t1 = x_t1/norm_1
-  if (norm_2 > 1e-12):
+  if (norm_2 > 1e-9):
     x_t2 = x_t2/norm_2
 
 ##------Formation of residual matrix--------##
@@ -240,19 +254,13 @@ for x in range(0,n_iter):
   #Sv_2 = davidson.get_X(R_iuab,Dv)
 
 ##------Schmidt orthogonalization----------##
-  ortho_t1 = davidson.get_X(R_ia,D1) 
-  ortho_t2 = davidson.get_X(R_ijab,D2)
+  ortho_t1 = davidson.get_X(R_ia,D1)-np.einsum('ia,ia',t1,t1_2)*t1 
+  ortho_t2 = davidson.get_X(R_ijab,D2)-np.einsum('ijab,ijab',t2,t2_2)*t2
   #ortho_t1 = t1_2 # This particular expression is somehow invoking a bug where t1_2 changes each time ortho_t1 is changed
   #ortho_t2 = t2_2 # Same problem for t2_2
   #ortho_So = So_2 
   #ortho_Sv = Sv_2
-  ''' 
-  for i in range(0,r+1):
-    ortho_t1 += - np.einsum('ia,ia',dict_t1[i],norm_t1)*dict_t1[i]
-    ortho_t2 += - np.einsum('ijab,ijab',dict_t2[i],norm_t2)*dict_t2[i]
-    ortho_So += - np.einsum('ijav,ijav',dict_So[i],norm_So)*dict_So[i]
-    ortho_Sv += - np.einsum('iuab,iuab',dict_Sv[i],norm_Sv)*dict_Sv[i]
-  ''' 
+  
   for i in range(0,r+1):
     ortho_t1 += - np.einsum('ia,ia',dict_t1[i],t1_2)*dict_t1[i]
     ortho_t2 += - np.einsum('ijab,ijab',dict_t2[i],t2_2)*dict_t2[i]
@@ -278,16 +286,25 @@ for x in range(0,n_iter):
   norm_Sv = Sv_2/np.linalg.norm(Sv_2)
   '''
   norm_total = np.linalg.norm(ortho_t1) + np.linalg.norm(ortho_t2)
-  if (norm_total > 1e-12):
+
+  if (norm_total > 1e-9):
     norm_t1 = ortho_t1/norm_total
     norm_t2 = ortho_t2/norm_total
   else:  
     print 'Error in calculation: Generating vector with zero norm'
     quit()
-
+  
   #norm_So = ortho_So/np.linalg.norm(ortho_So)
   #norm_Sv = ortho_Sv/np.linalg.norm(ortho_Sv)
   
+
+##-----Projecting out the ground state X values-----##
+  
+  norm_t1_proj_out = np.dot(factor_t1,np.reshape(norm_t1,((occ*virt),1)))
+  norm_t1 = cp.deepcopy(np.reshape(norm_t1_proj_out,(occ,virt))) 
+
+  norm_t2_proj_out = np.dot(factor_t2,np.reshape(norm_t2,((occ*occ*virt*virt),1)))
+  norm_t2 = cp.deepcopy(np.reshape(norm_t2_proj_out,(occ,occ,virt,virt))) 
 
 ##-------updating value of X for the next iteration-------##
   '''

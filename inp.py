@@ -14,7 +14,7 @@ basis = 'sto-3g',
 symmetry = True)
 
 ##------Specify linear or non-linear-------##
-calc = 'ICCSD'
+calc = 'CCSD'
 
 ##------Specify convergence criteria-------##
 conv = 8
