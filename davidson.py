@@ -38,4 +38,7 @@ def get_X(R,D):
   X = np.divide(R,D)
   return X
  
+def get_XO(R,D,Omega):
+  X = np.divide(R,(D-Omega))
+  return X
   
