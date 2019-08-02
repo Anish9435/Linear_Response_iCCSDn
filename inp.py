@@ -14,13 +14,13 @@ basis = 'sto-3g',
 symmetry = True)
 
 ##------Specify linear or non-linear-------##
-calc = 'CCSD'
+calc = 'ICCSD'
 
 ##------Specify convergence criteria-------##
 conv = 8
 
 ##------Specify number of iteration--------##
-n_iter = 30
+n_iter = 40
 
 ##------Specify DIIS-------------##
 diis = True
@@ -36,3 +36,6 @@ nfv = 0
 
 ##-----Specify no of steps after which linear combination has to be taken-----##
 n_davidson = 20
+
+##-----Projecting out the ground state t and s i.e coupled cluster solution---------## 
+proj_out_t0 = True
