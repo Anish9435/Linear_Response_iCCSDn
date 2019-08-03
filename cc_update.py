@@ -42,6 +42,14 @@ def update_t1t2(R_ia,R_ijab,t1,t2):
   eps = float(np.sum(abs(R_ia)+np.sum(abs(R_ijab)))/ntmax)
   return eps, t1, t2
 
+
+def compute_error(R_ia,R_ijab):
+  ntmax = 0
+  eps = 100
+  ntmax = np.size(R_ia)+np.size(R_ijab)
+  eps = float(np.sum(abs(R_ia)+np.sum(abs(R_ijab)))/ntmax)
+  return eps
+
 #-----------compute new So--------------#
 
 def update_So(R_ijav,So):
