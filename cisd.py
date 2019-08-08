@@ -2,7 +2,7 @@ from pyscf import scf
 import numpy as np
 import copy as cp
 import davidson
-import inp_he as inp
+import inp
 import MP2
 import intermediates
 import amplitude_cisd
@@ -32,16 +32,15 @@ t2 = np.zeros((occ,occ,virt,virt))
 Fock_mo = MP2.Fock_mo
 twoelecint_mo = MP2.twoelecint_mo 
 oneelecint_mo = trans_mo.oneelecint_mo
-#print 'OneElecint:'
-#print oneelecint_mo
 nao = MP2.nao
-#Fock_mo = oneelecint_mo
 
 o_act = inp.o_act
 v_act = inp.v_act
 n_iter = inp.n_iter
 n_davidson = inp.n_davidson
 conv = 10**(-inp.conv)
+#D1 = MP2.D1
+#D2 = MP2.D2
 
 Enuc = 'Nuclear energy', inp.mol.energy_nuc()
 
@@ -97,22 +96,17 @@ def get_preconditioner(occ,virt,nao, Fock_mo, twoelecint_mo, ehf):
   return D1, D2
 
 D1, D2 = get_preconditioner(occ,virt,nao, oneelecint_mo, twoelecint_mo, ehf)
+
 #print '1-electron Preconditioner'
-write_t1(D1, occ)
+#write_t1(D1, occ)
 #print '2-electron Preconditioner'
-write_t2(D2, occ)
+#write_t2(D2, occ)
 
 #R_ia = cp.deepcopy(Fock_mo[:occ,occ:nao])
 #R_ijab = 0.5*cp.deepcopy(twoelecint_mo[:occ,:occ,occ:nao,occ:nao])
 #
 #t1 = davidson.get_X(R_ia,D1)
 #t2 = davidson.get_X(R_ijab,D2)
-
-sq_norm = 0
-sq_norm += 1.0
-sq_norm += np.einsum('ia,ia',t1,t1)
-sq_norm += np.einsum('ijab,ijab',t2,t2)
-norm = math.sqrt(sq_norm)
 
 ##-----------Initialization of Dictionaries for storing the values----------##
 
@@ -141,8 +135,7 @@ B_Y_ia = np.zeros((1,1))
 B_Y_ijab = np.zeros((1,1))
 
 ##------Start iteration--------##
-#for x in range(0,n_iter):
-for x in range(0,4):
+for x in range(0,n_iter):
 
 ##-----conditioning with the remainder------##
 
@@ -164,8 +157,8 @@ for x in range(0,4):
       B_Y_ia = np.zeros((r+1,r+1))
       B_Y_ijab = np.zeros((r+1,r+1))
 
-      dict_t0[r] = x_t0 # This should be the proper way, anyway convergence is still hard to achieve even with this. Need to look in to it. 
-      dict_t1[r] = x_t1 # This should be the proper way, anyway convergence is still hard to achieve even with this. Need to look in to it. 
+      dict_t0[r] = x_t0
+      dict_t1[r] = x_t1
       dict_t2[r] = x_t2
   
 ##------Diagrams of coupled cluster theory i.e AX with new t and s---------##
@@ -182,7 +175,6 @@ for x in range(0,4):
   #print write_t1(Y_ia,occ)
 
   Y_ijab = amplitude_cisd.doubles(I_oo,I_vv,Ivvvv,Ioooo,Iovvo,Iovvo_2,Iovov,Iovov_2,I_oovo,I_vovv,dict_t0[r],dict_t1[r],tau,dict_t2[r],ehf)
-  #Y_ijab += amplitude.singles_n_doubles_cisd(dict_t1[r],dict_t2[r],tau,I_oovo,I_vovv)
  
   Y_ijab = cc_symmetrize.symmetrize(Y_ijab)
  
@@ -195,9 +187,6 @@ for x in range(0,4):
   dict_Y_0[r] = Y_0
   dict_Y_ia[r] = Y_ia
   dict_Y_ijab[r] = Y_ijab
-
- #print 'Y_ijab'
- #print Y_ijab
 
 ##---------Construction of B matrix---------------##
 
@@ -220,46 +209,33 @@ for x in range(0,4):
  
 
   for m in range(1,r+1):
-    #print '*****'
+
     B_Y_0[m-1,r] = dict_t0[m-1]*dict_Y_0[r]
-    #print dict_t0[m-1],dict_Y_0[r],B_Y_0[m-1,r]
     B_Y_0[r,m-1] = dict_t0[r]*dict_Y_0[m-1]
-    #print B_Y_0[r,m-1]
-    #print '*****'
 
-    B_Y_ia[m-1,r] = np.einsum('ia,ia',dict_t1[m-1],dict_Y_ia[r])
-    B_Y_ia[r,m-1] = np.einsum('ia,ia',dict_t1[r],dict_Y_ia[m-1])
+    B_Y_ia[m-1,r] = 2*np.einsum('ia,ia',dict_t1[m-1],dict_Y_ia[r])
+    B_Y_ia[r,m-1] = 2*np.einsum('ia,ia',dict_t1[r],dict_Y_ia[m-1])
 
-    #print '*****'
-    B_Y_ijab[m-1,r] = np.einsum('ijab,ijab',dict_t2[m-1],dict_Y_ijab[r])
-    #print B_Y_ijab[m-1,r]
-    #print 'Printing dict_t2[',m-1,']'
-    #write_t2(dict_t2[m-1], occ)
-    #print 'Pr_Y_ijab[',r']'
-    #write_t2(dict_Y_ijab[r], occ)
-    B_Y_ijab[r,m-1] = np.einsum('ijab,ijab',dict_t2[r],dict_Y_ijab[m-1])
-    #print B_Y_ijab[r,m-1]
-    #print 'Printing dict_t2[',r,']'
-    #write_t2(dict_t2[r], occ)
-    #print 'Pr_Y_ijab[',m-1,']'
-    #write_t2(dict_Y_ijab[m-1], occ)
-    #print '*****'
+    B_Y_ijab[m-1,r] = 2*np.einsum('ijab,ijab',dict_t2[m-1],dict_Y_ijab[r]) - np.einsum('ijab,ijba',dict_t2[m-1],dict_Y_ijab[r])
+    B_Y_ijab[r,m-1] = 2*np.einsum('ijab,ijab',dict_t2[r],dict_Y_ijab[m-1]) - np.einsum('ijab,ijba',dict_t2[r],dict_Y_ijab[m-1])
 
   B_Y_0[r,r] = dict_t0[r]*dict_Y_0[r]
-  B_Y_ia[r,r] = np.einsum('ia,ia',dict_t1[r],dict_Y_ia[r])
-  B_Y_ijab[r,r] = np.einsum('ijab,ijab',dict_t2[r],dict_Y_ijab[r])
+  B_Y_ia[r,r] = 2*np.einsum('ia,ia',dict_t1[r],dict_Y_ia[r])
+  B_Y_ijab[r,r] = 2*np.einsum('ijab,ijab',dict_t2[r],dict_Y_ijab[r]) - np.einsum('ijab,ijba',dict_t2[r],dict_Y_ijab[r])
    
-  #B_total = B_Y_ia+B_Y_ijab+B_Y_iuab+B_Y_ijav
   B_total = B_Y_0+B_Y_ia+B_Y_ijab
+
   #print 'Print B Matrices:'
-  print B_Y_0
-  print '\n'
-  print B_Y_ia
-  print '\n'
-  print B_Y_ijab
-  print '\n'
+  #print B_Y_0
+  #print '\n'
+  #print B_Y_ia
+  #print '\n'
+  #print B_Y_ijab
+  #print '\n'
+  print '******'
   print B_total
-  print '\n'
+  print '******'
+  #print '\n'
 
 ##-------Diagonalization of the B matrix----------##
       
@@ -289,8 +265,8 @@ for x in range(0,4):
 
   sq_norm = 0
   sq_norm += x_t0*x_t0
-  sq_norm += np.einsum('ia,ia',x_t1,x_t1) 
-  sq_norm += np.einsum('ijab,ijab',x_t2,x_t2) 
+  sq_norm += 2*np.einsum('ia,ia',x_t1,x_t1) 
+  sq_norm += 2*np.einsum('ijab,ijab',x_t2,x_t2) - np.einsum('ijab,ijba',x_t2,x_t2)  
   norm = math.sqrt(sq_norm)
   
   if (norm > 1e-9):
@@ -306,66 +282,66 @@ for x in range(0,4):
 
   for i in range(0,r+1): 
     R_0 += (coeff_total[i]*dict_Y_0[i] - w_total[ind_min_wtotal]*coeff_total[i]*dict_t0[i])
-    R_ia += (coeff_total[i]*dict_Y_ia[i] - w_total[ind_min_wtotal]*coeff_total[i]*dict_t1[i])
-    R_ijab += (coeff_total[i]*dict_Y_ijab[i] - w_total[ind_min_wtotal]*coeff_total[i]*dict_t2[i])
+    R_ia += coeff_total[i]*dict_Y_ia[i] - w_total[ind_min_wtotal]*coeff_total[i]*dict_t1[i]
+    R_ijab += coeff_total[i]*dict_Y_ijab[i] - w_total[ind_min_wtotal]*coeff_total[i]*dict_t2[i]
 
-  print 'Residue'
-  write_t1(R_ia,occ)
-  write_t2(R_ijab,occ)
+  #print 'Residue'
+  #write_t1(R_ia,occ)
+  #write_t2(R_ijab,occ)
 
   eps_t = abs(R_0) + cc_update.update_t1t2(R_ia,R_ijab,x_t1,x_t2)[0]
-  #eps_t = cc_update.update_t1t2(R_ia,R_ijab,x_t1,x_t2)[0]
   
-  print 'EPS: ', eps_t 
-  print 'Eigen value: ', w_total[ind_min_wtotal]
+  print '\n'
+  print 'EPS>> %3d       %8.4E' % (x,eps_t )
+  print 'Eigen value>> %17.13g' % w_total[ind_min_wtotal]
+  print '\n'
   omega = w_total[ind_min_wtotal]
   if (eps_t <= conv):
+    print '\n'
     print "CONVERGED!!!!!!!!!!!!"
-    print 'Excitation Energy: ', w_total[ind_min_wtotal]
+    print 'Excitation Energy: %17.13g' % w_total[ind_min_wtotal]
     break
 
 ##--------Divide residue by denominator to get X--------##
 ## Using a different denominator that includes Omega 
 
-  t0_2 = R_0
-  t1_2 = davidson.get_XO(R_ia,D1,omega)
-  t2_2 = davidson.get_XO(R_ijab,D2,omega)
+  t0 = R_0
+  t1 = davidson.get_XO(R_ia,D1,omega)
+  t2 = davidson.get_XO(R_ijab,D2,omega)
 
-  print 'Before Orthogonalization'
-  write_t2(t2_2,occ)
+  #print 'Before Orthogonalization'
+  #write_t1(t1_2,occ)
+  #write_t2(t2_2,occ)
   
-  sq_norm = 0.0
-  sq_norm += t0_2*t0_2
-  sq_norm += np.einsum('ia,ia',t1_2,t1_2)
-  sq_norm += np.einsum('ijab,ijab',t2_2,t2_2)
-  norm = math.sqrt(sq_norm)
-  print 'xnrm: ', norm
-
-  t0 = t0_2/norm
-  t1 = t1_2/norm
-  t2 = t2_2/norm
+  #t0 = t0_2
+  #t1 = t1_2
+  #t2 = t2_2
 
 ##------Schmidt orthogonalization----------##
 
- #ortho_t0 = R_0
- #ortho_t1 = davidson.get_X(R_ia,D1)
- #ortho_t2 = davidson.get_X(R_ijab,D2)
- #ortho_t1 = davidson.get_XO(R_ia,D1,omega)
- #ortho_t2 = davidson.get_XO(R_ijab,D2,omega)
+  ortho_t0 = t0
+  ortho_t1 = t1
+  ortho_t2 = t2
 
-  ortho_t0 = t0_2/norm
-  ortho_t1 = t1_2/norm
-  ortho_t2 = t2_2/norm
-
-  print 'Printing norm'
-  print arr_norm_t
+  #print 'Printing norm'
+  #print arr_norm_t
   for i in range(0,r+1):
-    ortho_t0 += dict_t0[i]*t0*dict_t0[i]#/arr_norm_t[i]
-    ortho_t1 += - (np.einsum('ia,ia',dict_t1[i],t1)*dict_t1[i])#/arr_norm_t[i]
-    ortho_t2 += - (np.einsum('ijab,ijab',dict_t2[i],t2)*dict_t2[i])#/arr_norm_t[i]
+    overlap = dict_t0[i]*t0 + 2*np.einsum('ia,ia',t1,dict_t1[i]) + 2*np.einsum('ijab,ijab',t2,dict_t2[i]) - np.einsum('ijab,ijba',t2,dict_t2[i])
+    ortho_t0 += -1.0*overlap*dict_t0[i] 
+    ortho_t1 += -1.0*overlap*dict_t1[i]
+    ortho_t2 += -1.0*overlap*dict_t2[i]
    
-  print 'After Orthogonalization'
-  write_t2(ortho_t2,occ)
+ #print 'After Orthogonalization'
+ #write_t1(ortho_t1,occ)
+ #write_t2(ortho_t2,occ)
+
+ #for i in range(0,r+1):
+ #  p = 2*np.einsum('ia,ia',dict_t1[i],ortho_t1)
+ #  q = 2*np.einsum('ijab,ijab',dict_t2[i],ortho_t2) - np.einsum('ijab,ijba',dict_t2[i],ortho_t2) 
+ #  y= p+q
+ #  print 'OVERLAP ', i
+ #  print p,q
+ #  print y
 
 ##--------Normalization of the new t and s------##
   '''  
@@ -379,8 +355,8 @@ for x in range(0,4):
 
   sq_norm = 0.0
   sq_norm += ortho_t0*ortho_t0
-  sq_norm += np.einsum('ia,ia',ortho_t1,ortho_t1)
-  sq_norm += np.einsum('ijab,ijab',ortho_t2,ortho_t2)
+  sq_norm += 2*np.einsum('ia,ia',ortho_t1,ortho_t1)
+  sq_norm += 2*np.einsum('ijab,ijab',ortho_t2,ortho_t2) - np.einsum('ijab,ijba',ortho_t2,ortho_t2)
   norm = math.sqrt(sq_norm)
 
   # Each part of the vector is divided by the total norm of the vector
