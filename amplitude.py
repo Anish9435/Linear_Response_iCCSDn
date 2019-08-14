@@ -26,9 +26,18 @@ o_act = inp.o_act
 v_act = inp.v_act
 act = o_act + v_act
 
+def zero(t1,t2):
+  R_0 = 2.0*np.einsum('ia,ia',Fock_mo[:occ,occ:nao],t1)
+  R_0 += 2.0*np.einsum('ijab,ijab',twoelecint_mo[:occ,:occ,occ:nao,occ:nao],t2)
+  R_0 += -1.0*np.einsum('ijab,ijba',twoelecint_mo[:occ,:occ,occ:nao,occ:nao],t2)
+  return R_0
+  R_0 = None
+  gc.collect()
+
 #      Compute R_ia
-def singles(I1,I2,I_oo,I_vv,tau,t1,t2):
-  R_ia = cp.deepcopy(Fock_mo[:occ,occ:nao])
+def singles(I1,I2,I_oo,I_vv,tau,t0,t1,t2):
+  R_ia = Fock_mo[:occ,occ:nao]*t0
+  R_ia += cp.deepcopy(Fock_mo[:occ,occ:nao])
   R_ia += -np.einsum('ik,ka->ia',I_oo,t1)                                          #diagrams 1,l,j,m,n
   I_oo = None
   R_ia += np.einsum('ca,ic->ia',I_vv,t1)                                           #diagrams 2,k,i
@@ -50,9 +59,9 @@ def singles(I1,I2,I_oo,I_vv,tau,t1,t2):
   gc.collect()
 
 #      Compute R_ijab
-def doubles(I_oo,I_vv,Ivvvv,Ioooo,Iovvo,Iovvo_2,Iovov,Iovov_2,tau,t2):
+def doubles(I_oo,I_vv,Ivvvv,Ioooo,Iovvo,Iovvo_2,Iovov,Iovov_2,tau,t0,t2):
   print " "
-  R_ijab = 0.5*cp.deepcopy(twoelecint_mo[:occ,:occ,occ:nao,occ:nao])
+  R_ijab = 0.5*cp.deepcopy(twoelecint_mo[:occ,:occ,occ:nao,occ:nao])*t0
   R_ijab += -np.einsum('ik,kjab->ijab',I_oo,t2)            #diagrams 1,25,27,5,8,35,38'
   I_oo = None
   R_ijab += np.einsum('ca,ijcb->ijab',I_vv,t2)              #diagrams 2,24,25,34',non-linear 6,7
