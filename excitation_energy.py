@@ -94,7 +94,7 @@ for x in range(0,n_iter):
 ##------Diagrams and intermediates of coupled cluster theory i.e AX with new t and s---------##
   
   tau_new = cp.deepcopy(dict_t2[r]) 
-  
+ 
   I_vv, I_oo, Ivvvv, Ioooo, Iovvo, Iovvo_2, Iovov,Iovov_2, I_oovo, I_vovv = intermediates.initialize()
   I1, I2 = intermediates.R_ia_intermediates(t1)
   I1_new, I2_new = intermediates.R_ia_intermediates(dict_t1[r])
@@ -108,13 +108,22 @@ for x in range(0,n_iter):
   
   I_oo,I_vv,I_oovo,I_vovv,Ioooo_2,I_voov,Iovov_3,Iovvo_3,Iooov,I3 = intermediates.singles_intermediates(t1,t2,tau,I_oo,I_vv,I2)
   I_oo_new,I_vv_new,I_oovo_new,I_vovv_new,Ioooo_2_new,I_voov_new,Iovov_3_new,Iovvo_3_new,Iooov_new,I3_new = intermediates.singles_intermediates(dict_t1[r],dict_t2[r],tau_new,I_oo_new,I_vv_new,I2_new)
+ 
+  I_a, I_b, I_c, I_d = intermediates.disconnected_t1_terms(t1) 
+  I_a_new, I_b_new, I_c_new, I_d_new = intermediates.disconnected_t1_terms(dict_t1[r])
+
+  II_a, II_b = intermediates.disconnected_t2_terms(t1) 
+  II_a_new, II_b_new = intermediates.disconnected_t2_terms(dict_t1[r])
+ 
+  Y_ia = amplitude.singles_response(I1,I2,I_oo,I_vv,dict_t1[r],dict_t2[r])
+  Y_ia += amplitude.singles_response(I1_new,I2_new,I_oo_new,I_vv_new,t1,t2)
+  Y_ia += amplitude.disconnect_t1(I_a,I_b,I_c,I_d,dict_t1[r])
+  Y_ia += amplitude.disconnect_t1(I_a_new,I_b_new,I_c_new,I_d_new,t1)
   
-  Y_ia = amplitude.singles_response(I1,I2,I_oo,I_vv,tau_new,dict_t1[r],dict_t2[r])
-  Y_ia += amplitude.singles_response(I1_new,I2_new,I_oo_new,I_vv_new,tau,t1,t2)
   Y_ijab = amplitude.doubles_response(I_oo,I_vv,Ivvvv,Ioooo,Iovvo,Iovvo_2,Iovov,Iovov_2,tau_new,dict_t2[r])
   Y_ijab += amplitude.doubles_response(I_oo_new,I_vv_new,Ivvvv,Ioooo_new,Iovvo_new,Iovvo_2_new,Iovov_new,Iovov_2,tau,t2)
-  Y_ijab += amplitude.singles_n_doubles_response(dict_t1[r],dict_t2[r],tau_new,I_oovo,I_vovv)
-  Y_ijab += amplitude.singles_n_doubles_response(t1,t2,tau,I_oovo_new,I_vovv_new)
+  Y_ijab += amplitude.singles_n_doubles(dict_t1[r],I_oovo,I_vovv,II_a,II_b)
+  Y_ijab += amplitude.singles_n_doubles(t1,I_oovo_new,I_vovv_new,II_a_new,II_b_new)
  
   #Y_ijab += amplitude.inserted_diag_So(dict_t2[r],II_oo) 
   #Y_ijab += amplitude.inserted_diag_So(t2,II_oo_new) 

@@ -3,18 +3,18 @@ import pyscf.gto
 from pyscf import gto
 
 ##-----Specify geometry and basis set------##
+
 mol = pyscf.gto.M(
-verbose = 4,
-atom ='''
-O         -1.62893       -0.04138        0.37137
-H         -0.69803       -0.09168        0.09337
-H         -2.06663       -0.73498       -0.13663
-''',                        
-basis = 'sto-3g',  
+verbose = 5,
+output = None,
+unit='Bohr',
+atom = [['Li',(  0.000000,  0.000000, -0.3797714041)],
+        ['H',(  0.000000,  0.000000,  2.6437904102)]],
+basis = {'H': 'sto-3g','Li':'sto-3g'},
 symmetry = True)
 
 ##------Specify linear or non-linear-------##
-calc = 'ICCSD'
+calc = 'CCSD'
 
 ##------Specify convergence criteria-------##
 conv = 8
@@ -35,7 +35,7 @@ nfo = 0
 nfv = 0
 
 ##-----Specify no of steps after which linear combination has to be taken-----##
-n_davidson = 20
+n_davidson = 40
 
 ##-----Projecting out the ground state t and s i.e coupled cluster solution---------## 
 proj_out_t0 = True

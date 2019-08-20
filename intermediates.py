@@ -48,11 +48,9 @@ def initialize():
   
 #      Introducing the non-linear doubles terms
 def update_int(tau,t2,I_vv,I_oo,Ioooo,Iovvo,Iovvo_2,Iovov):
-  I_oo += np.zeros((occ,occ)) 
-  I_vv += np.zeros((virt,virt)) 
-  #I_vv += -2*np.einsum('cdkl,klad->ca',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t2) + np.einsum('cdkl,klda->ca',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t2)
+  I_vv += -2*np.einsum('cdkl,klad->ca',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t2) + np.einsum('cdkl,klda->ca',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t2)
 
-  #I_oo += 2*np.einsum('cdkl,ilcd->ik',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],tau) - np.einsum('dckl,lidc->ik',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],tau)
+  I_oo += 2*np.einsum('cdkl,ilcd->ik',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],tau) - np.einsum('dckl,lidc->ik',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],tau)
 
   Ioooo += np.einsum('cdkl,ijcd->ijkl',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t2)
 
@@ -122,13 +120,11 @@ def R_ia_intermediates(t1):
   
   
 def singles_intermediates(t1,t2,tau,I_oo,I_vv,I2):
-  I_oo += np.zeros((occ,occ))
-  I_vv += np.zeros((virt,virt))
-  #I_oo += 2*np.einsum('ibkj,jb->ik',twoelecint_mo[:occ,occ:nao,:occ,:occ],t1)    #intermediate for diagrams 5
-  #I_oo += -np.einsum('ibjk,jb->ik',twoelecint_mo[:occ,occ:nao,:occ,:occ],t1)     #intermediate for diagrams 8
-  #I_vv += 2*np.einsum('bcja,jb->ca',twoelecint_mo[occ:nao,occ:nao,:occ,occ:nao],t1)    #intermediate for diagrams 6
-  #I_vv += -np.einsum('cbja,jb->ca',twoelecint_mo[occ:nao,occ:nao,:occ,occ:nao],t1)    #intermediate for diagrams 7
-  #I_vv += -2*np.einsum('dclk,ld,ka->ca',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t1,t1)  #intermediate for diagram 34'
+  I_oo += 2*np.einsum('ibkj,jb->ik',twoelecint_mo[:occ,occ:nao,:occ,:occ],t1)    #intermediate for diagrams 5
+  I_oo += -np.einsum('ibjk,jb->ik',twoelecint_mo[:occ,occ:nao,:occ,:occ],t1)     #intermediate for diagrams 8
+  I_vv += 2*np.einsum('bcja,jb->ca',twoelecint_mo[occ:nao,occ:nao,:occ,occ:nao],t1)    #intermediate for diagrams 6
+  I_vv += -np.einsum('cbja,jb->ca',twoelecint_mo[occ:nao,occ:nao,:occ,occ:nao],t1)    #intermediate for diagrams 7
+  I_vv += -2*np.einsum('dclk,ld,ka->ca',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t1,t1)  #intermediate for diagram 34'
   
   I_oovo = np.zeros((occ,occ,virt,occ))
   I_oovo += -np.einsum('cikl,jlca->ijak',twoelecint_mo[occ:nao,:occ,:occ,:occ],t2)    #intermediate for diagrams 11
@@ -170,4 +166,24 @@ def singles_intermediates(t1,t2,tau,I_oo,I_vv,I2):
   I3 = None
   gc.collect()
   
- 
+def disconnected_t1_terms(t1):
+  I_a = -np.einsum('ibkj,ka->ibaj',twoelecint_mo[:occ,occ:nao,:occ,:occ],t1) ##int for diagram a
+  I_b = -np.einsum('ibkj,ja->ibka',twoelecint_mo[:occ,occ:nao,:occ,:occ],t1) ##int for diagram b
+  I_c = np.einsum('cdak,ic->idak',twoelecint_mo[occ:nao,occ:nao,occ:nao,:occ],t1) ##int for diagram c
+  I_d = np.einsum('cdak,id->caik',twoelecint_mo[occ:nao,occ:nao,occ:nao,:occ],t1) ##int for diagram d
+  return I_a, I_b, I_c, I_d
+  I_a = None
+  I_b = None
+  I_c = None
+  I_d = None
+  gc.collect()
+
+def disconnected_t2_terms(t1):
+  II_a = -np.einsum('ickb,ka->icab',twoelecint_mo[:occ,occ:nao,:occ,occ:nao],t1) #int for non-linear 3
+  II_b = np.einsum('icak,jc->ijak',twoelecint_mo[:occ,occ:nao,occ:nao,:occ],t1) #int for non-linear 4
+  return II_a, II_b
+  II_a = None
+  II_b = None
+  gc.collect()
+
+
