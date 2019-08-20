@@ -26,14 +26,6 @@ o_act = inp.o_act
 v_act = inp.v_act
 act = o_act + v_act
 
-def zero(t1,t2):
-  R_0 = 2.0*np.einsum('ia,ia',Fock_mo[:occ,occ:nao],t1)
-  R_0 += 2.0*np.einsum('ijab,ijab',twoelecint_mo[:occ,:occ,occ:nao,occ:nao],t2)
-  R_0 += -1.0*np.einsum('ijab,ijba',twoelecint_mo[:occ,:occ,occ:nao,occ:nao],t2)
-  return R_0
-  R_0 = None
-  gc.collect()
-
 #      Compute R_ia
 def singles(I1,I2,I_oo,I_vv,tau,t1,t2):
   R_ia = cp.deepcopy(Fock_mo[:occ,occ:nao])
@@ -47,9 +39,9 @@ def singles(I1,I2,I_oo,I_vv,tau,t1,t2):
   R_ia += -np.einsum('cdak,ikdc->ia',twoelecint_mo[occ:nao,occ:nao,occ:nao,:occ],tau) #diagrams 8 and d
   
 
-  #R_ia += 2*np.einsum('bj,ijab->ia',I1,t2) - np.einsum('bj,ijba->ia',I1,t2)     #diagrams e,f
+  R_ia += 2*np.einsum('bj,ijab->ia',I1,t2) - np.einsum('bj,ijba->ia',I1,t2)     #diagrams e,f
   I1 = None
-  #R_ia += 2*np.einsum('bj,ijab->ia',I2,t2) - np.einsum('bj,ijba->ia',I2,t2)     #diagrams g,h
+  R_ia += 2*np.einsum('bj,ijab->ia',I2,t2) - np.einsum('bj,ijba->ia',I2,t2)     #diagrams g,h
   I2 = None
   R_ia += 2*np.einsum('icak,kc->ia',twoelecint_mo[:occ,occ:nao,occ:nao,:occ],t1)           #diagram 3
   R_ia += -np.einsum('icka,kc->ia',twoelecint_mo[:occ,occ:nao,:occ,occ:nao],t1)           #diagram 4
@@ -69,9 +61,9 @@ def singles_response(I1,I2,I_oo,I_vv,tau,t1,t2):
   R_ia += -np.einsum('cdak,ikdc->ia',twoelecint_mo[occ:nao,occ:nao,occ:nao,:occ],tau) #diagrams 8 and d
   
 
-  #R_ia += 2*np.einsum('bj,ijab->ia',I1,t2) - np.einsum('bj,ijba->ia',I1,t2)     #diagrams e,f
+  R_ia += 2*np.einsum('bj,ijab->ia',I1,t2) - np.einsum('bj,ijba->ia',I1,t2)     #diagrams e,f
   I1 = None
-  #R_ia += 2*np.einsum('bj,ijab->ia',I2,t2) - np.einsum('bj,ijba->ia',I2,t2)     #diagrams g,h
+  R_ia += 2*np.einsum('bj,ijab->ia',I2,t2) - np.einsum('bj,ijba->ia',I2,t2)     #diagrams g,h
   I2 = None
   R_ia += 2*np.einsum('icak,kc->ia',twoelecint_mo[:occ,occ:nao,occ:nao,:occ],t1)           #diagram 3
   R_ia += -np.einsum('icka,kc->ia',twoelecint_mo[:occ,occ:nao,:occ,occ:nao],t1)           #diagram 4
@@ -133,8 +125,8 @@ def singles_n_doubles(t1,t2,tau,I_oovo,I_vovv):#,Iovov_3,Iovvo_3,Iooov,I3,Ioooo_
   #R_ijab += -np.einsum('ickb,ka,jc->ijab',twoelecint_mo[:occ,occ:nao,:occ,occ:nao],t1,t1)       #diagrams non-linear 3
   #R_ijab += -np.einsum('icak,jc,kb->ijab',twoelecint_mo[:occ,occ:nao,occ:nao,:occ],t1,t1)       #diagrams non-linear 4
   #R_ijab += -np.einsum('ickb,jc,ka->ijab',Iovov_3,t1,t1)       #diagrams 36
-  #R_ijab += -np.einsum('ijkb,ka->ijab',twoelecint_mo[:occ,:occ,:occ,occ:nao],t1)           #diagram linear 3
-  #R_ijab += np.einsum('cjab,ic->ijab',twoelecint_mo[occ:nao,:occ,occ:nao,occ:nao],t1)      #diagram linear 4
+  R_ijab += -np.einsum('ijkb,ka->ijab',twoelecint_mo[:occ,:occ,:occ,occ:nao],t1)           #diagram linear 3
+  R_ijab += np.einsum('cjab,ic->ijab',twoelecint_mo[occ:nao,:occ,occ:nao,occ:nao],t1)      #diagram linear 4
   #R_ijab += -np.einsum('jcbk,ic,ka->ijab',Iovvo_3,t1,t1)      #diagrams 32,33,31,30
   #R_ijab += -np.einsum('ijlb,la->ijab',Iooov,t1)      #diagram 34,30
   #R_ijab += -0.5*np.einsum('idal,jd,lb->ijab',I3,t1,t1)      #diagram 40
@@ -153,6 +145,32 @@ def singles_n_doubles(t1,t2,tau,I_oovo,I_vovv):#,Iovov_3,Iovvo_3,Iooov,I3,Ioooo_
   I_voov = None
   gc.collect() 
 
+def singles_n_doubles_response(t1,t2,tau,I_oovo,I_vovv):#,Iovov_3,Iovvo_3,Iooov,I3,Ioooo_2,I_voov):
+
+  R_ijab = -np.einsum('ijak,kb->ijab',I_oovo,t1)       #diagrams 11,12,13,15,17
+  R_ijab += np.einsum('cjab,ic->ijab',I_vovv,t1)       #diagrams 9,10,14,16,18,31,37,39
+  #R_ijab += -np.einsum('ickb,ka,jc->ijab',twoelecint_mo[:occ,occ:nao,:occ,occ:nao],t1,t1)       #diagrams non-linear 3
+  #R_ijab += -np.einsum('icak,jc,kb->ijab',twoelecint_mo[:occ,occ:nao,occ:nao,:occ],t1,t1)       #diagrams non-linear 4
+  #R_ijab += -np.einsum('ickb,jc,ka->ijab',Iovov_3,t1,t1)       #diagrams 36
+  R_ijab += -np.einsum('ijkb,ka->ijab',twoelecint_mo[:occ,:occ,:occ,occ:nao],t1)           #diagram linear 3
+  R_ijab += np.einsum('cjab,ic->ijab',twoelecint_mo[occ:nao,:occ,occ:nao,occ:nao],t1)      #diagram linear 4
+  #R_ijab += -np.einsum('jcbk,ic,ka->ijab',Iovvo_3,t1,t1)      #diagrams 32,33,31,30
+  #R_ijab += -np.einsum('ijlb,la->ijab',Iooov,t1)      #diagram 34,30
+  #R_ijab += -0.5*np.einsum('idal,jd,lb->ijab',I3,t1,t1)      #diagram 40
+  #R_ijab += np.einsum('ijkl,klab->ijab',Ioooo_2,t2)      #diagram 37
+  #R_ijab += -np.einsum('cjlb,ic,la->ijab',I_voov,t1,t1)      #diagram 39
+  return R_ijab
+
+  R_ijab = None
+  I_oovo = None
+  I_vovv = None
+  I_ovov_3 = None
+  I_ovvo_3 = None
+  I_ooov = None
+  I3 = None
+  Ioooo_2 = None
+  I_voov = None
+  gc.collect() 
 ##--------Constructing S diagrams-------------------##
 
 def Sv_diagram_vs_contraction(x,II_vv):

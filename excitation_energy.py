@@ -36,44 +36,18 @@ print t1
 
 ##-----------Initialization of Dictionaries for storing the values----------##
 
-#dict_Y_0 = {}
 dict_Y_ia = {}
 dict_Y_ijab = {}
 #dict_Y_ijav = {}
 #dict_Y_iuab = {}
 
-#dict_t0 = {}
 dict_t1 = {}
 dict_t2 = {}
 #dict_So = {}
 #dict_Sv = {}
 
-##--------Store the norm of each of the Ritz vectors-----------##
-
-#arr_norm_t1=[]
-#arr_norm_t2=[]
-
-##-----Normalization and conversion of ground state X to a vector-----##
-
-#cc_norm = 2*np.einsum('ijab,ijab',t2,tau) - np.einsum('ijba,ijab',t2,tau)
-#cc_norm += 2*(np.einsum('ia,ia',t1,t1)*np.einsum('jb,jb',t1,t1))
-
-#t1_0_vec = np.reshape(t1,((occ*virt),1))
-#t2_0_vec = np.reshape(t2,((occ*occ*virt*virt),1))
-
-##-------Projecting out factor--------##
-
-#factor_t1 = (np.eye((occ*virt),dtype=float)-(np.outer(t1_0_vec,t1_0_vec)/cc_norm)) ## It is important to divide the outer product with the norm of the vector
-#factor_t2 = (np.eye((occ*occ*virt*virt),dtype=float)-(np.outer(t2_0_vec,t2_0_vec)/cc_norm)) ## It is important to divide the outer product with the norm of the vector
-
-##-------Calculate the norm of the guess vectors-------##
-
-#arr_norm_t1.append(np.einsum('ia,ia',t1_new,t1_new))
-#arr_norm_t2.append(np.einsum('ijab,ijab',t2_new,t2_new))
-  
 ##-----Storing the values in the dictionary--------##
 
-#dict_t0[0] = t0
 dict_t1[0] = t1_new
 dict_t2[0] = t2_new
 #dict_So[0] = So_new
@@ -81,7 +55,6 @@ dict_t2[0] = t2_new
 
 ##-----Initialization of the 1*1 B matrix-------##
 
-#B_Y_0 = np.zeros((1,1))
 B_Y_ia = np.zeros((1,1))
 B_Y_ijab = np.zeros((1,1))
 #B_Y_ijav = np.zeros((1,1))
@@ -98,25 +71,21 @@ for x in range(0,n_iter):
   print ("Subspace vector "+str(r))
   if(x>0):
     if r==0:
-      #dict_Y_0.clear()
       dict_Y_ia.clear()
       dict_Y_ijab.clear()
       #dict_Y_ijav.clear()
       #dict_Y_iuab.clear()
 
-      #dict_t0.clear()
       dict_t1.clear()
       dict_t2.clear()
       #dict_So.clear()
       #dict_Sv.clear()
       
-      #B_Y_0 = np.zeros((r+1,r+1))
       B_Y_ia = np.zeros((r+1,r+1))
       B_Y_ijab = np.zeros((r+1,r+1))
       #B_Y_ijav = np.zeros((r+1,r+1))
       #B_Y_iuab = np.zeros((r+1,r+1))
       
-      #dict_t0[r] = x_t0
       dict_t1[r] = x_t1 # This should be the proper way, anyway convergence is still hard to achieve even with this. Need to look in to it. 
       dict_t2[r] = x_t2
       #dict_So[r] = norm_So
@@ -127,24 +96,25 @@ for x in range(0,n_iter):
   tau_new = cp.deepcopy(dict_t2[r]) 
   
   I_vv, I_oo, Ivvvv, Ioooo, Iovvo, Iovvo_2, Iovov,Iovov_2, I_oovo, I_vovv = intermediates.initialize()
-  #I_vv_new, I_oo_new, Ivvvv_new, Ioooo_new, Iovvo_new, Iovvo_2_new, Iovov_new,Iovov_2_new, I_oovo_new, I_vovv_new = intermediates.initialize()
   I1, I2 = intermediates.R_ia_intermediates(t1)
-  #I1_new, I2_new = intermediates.R_ia_intermediates(dict_t1[r])
+  I1_new, I2_new = intermediates.R_ia_intermediates(dict_t1[r])
   #II_oo = intermediates.W1_int_So(So)
   #II_vv = intermediates.W1_int_Sv(Sv)
   #II_oo_new = intermediates.W1_int_So(dict_So[r])
   #II_vv_new = intermediates.W1_int_Sv(dict_Sv[r])
   
-  #I_oo_new,I_vv_new,Ioooo_new,I_ovvo_new,Iovvo_2_new,Iovov_new = intermediates.update_int(tau_new,dict_t2[r],I_vv_new,I_oo_new,Ioooo_new,Iovvo_new,Iovvo_2_new,Iovov_new)  
-  #I_oo,I_vv,Ioooo,Iovvo,Iovvo_2,Iovov = intermediates.update_int(tau,t2,I_vv,I_oo,Ioooo,Iovvo,Iovvo_2,Iovov)
-  #I_oo,I_vv,I_oovo,I_vovv,Ioooo_2,I_voov,Iovov_3,Iovvo_3,Iooov,I3 = intermediates.singles_intermediates(t1,t2,tau,I_oo,I_vv,I2)
-  #I_oo_new,I_vv_new,I_oovo_new,I_vovv_new,Ioooo_2_new,I_voov_new,Iovov_3_new,Iovvo_3_new,Iooov_new,I3_new = intermediates.singles_intermediates(dict_t1[r],dict_t2[r],tau_new,I_oo_new,I_vv_new,I2_new)
+  I_oo_new,I_vv_new,Ioooo_new,Iovvo_new,Iovvo_2_new,Iovov_new = intermediates.update_int(tau_new,dict_t2[r],I_vv,I_oo,Ioooo,Iovvo,Iovvo_2,Iovov)  
+  I_oo,I_vv,Ioooo,Iovvo,Iovvo_2,Iovov = intermediates.update_int(tau,t2,I_vv,I_oo,Ioooo,Iovvo,Iovvo_2,Iovov)
   
-  #Y_0 = amplitude.zero(dict_t1[r],dict_t2[r]) 
-  #Y_ia = amplitude.singles(I1,I2,I_oo,I_vv,tau_new,dict_t0[r],dict_t1[r],dict_t2[r])
+  I_oo,I_vv,I_oovo,I_vovv,Ioooo_2,I_voov,Iovov_3,Iovvo_3,Iooov,I3 = intermediates.singles_intermediates(t1,t2,tau,I_oo,I_vv,I2)
+  I_oo_new,I_vv_new,I_oovo_new,I_vovv_new,Ioooo_2_new,I_voov_new,Iovov_3_new,Iovvo_3_new,Iooov_new,I3_new = intermediates.singles_intermediates(dict_t1[r],dict_t2[r],tau_new,I_oo_new,I_vv_new,I2_new)
+  
   Y_ia = amplitude.singles_response(I1,I2,I_oo,I_vv,tau_new,dict_t1[r],dict_t2[r])
+  Y_ia += amplitude.singles_response(I1_new,I2_new,I_oo_new,I_vv_new,tau,t1,t2)
   Y_ijab = amplitude.doubles_response(I_oo,I_vv,Ivvvv,Ioooo,Iovvo,Iovvo_2,Iovov,Iovov_2,tau_new,dict_t2[r])
-  Y_ijab += amplitude.singles_n_doubles(dict_t1[r],dict_t2[r],tau_new,I_oovo,I_vovv)
+  Y_ijab += amplitude.doubles_response(I_oo_new,I_vv_new,Ivvvv,Ioooo_new,Iovvo_new,Iovvo_2_new,Iovov_new,Iovov_2,tau,t2)
+  Y_ijab += amplitude.singles_n_doubles_response(dict_t1[r],dict_t2[r],tau_new,I_oovo,I_vovv)
+  Y_ijab += amplitude.singles_n_doubles_response(t1,t2,tau,I_oovo_new,I_vovv_new)
  
   #Y_ijab += amplitude.inserted_diag_So(dict_t2[r],II_oo) 
   #Y_ijab += amplitude.inserted_diag_So(t2,II_oo_new) 
@@ -157,11 +127,8 @@ for x in range(0,n_iter):
   #Y_ijav = amplitude.So_diagram_vs_contraction(dict_So[r],II_oo_new)
   #Y_ijav += amplitude.So_diagram_vt_contraction(dict_t2[r])
 
-##-------Project out ground state----------##
-
 ##-------Storing AX in the dictionary---------##
   
-  #dict_Y_0[r] = Y_0    
   dict_Y_ia[r] = Y_ia
   dict_Y_ijab[r] = Y_ijab
   #dict_Y_ijav[r] = Y_ijav
@@ -169,26 +136,21 @@ for x in range(0,n_iter):
 
 ##---------Construction of B matrix---------------##
 
-  #print "----B Matrix-------" 
-  #B_Y_0_nth = np.zeros((r+1,r+1))
   B_Y_ia_nth = np.zeros((r+1,r+1))
   B_Y_ijab_nth = np.zeros((r+1,r+1))
   #B_Y_ijav_nth = np.zeros((r+1,r+1))
   #B_Y_iuab_nth = np.zeros((r+1,r+1))
   
-  #B_Y_0_nth[:r,:r] = B_Y_0 
   B_Y_ia_nth[:r,:r] = B_Y_ia 
   B_Y_ijab_nth[:r,:r] = B_Y_ijab
   #B_Y_ijav_nth[:r,:r] = B_Y_ijav
   #B_Y_iuab_nth[:r,:r] = B_Y_iuab 
   
-  #B_Y_0 = cp.deepcopy(B_Y_0_nth)
   B_Y_ia = cp.deepcopy(B_Y_ia_nth)
   B_Y_ijab = cp.deepcopy(B_Y_ijab_nth)
   #B_Y_ijav = cp.deepcopy(B_Y_ijav_nth)
   #B_Y_iuab = cp.deepcopy(B_Y_iuab_nth)
   
-  #B_Y_0_nth = None
   B_Y_ia_nth = None
   B_Y_ijab_nth = None
   #B_Y_ijav_nth = None
@@ -196,9 +158,6 @@ for x in range(0,n_iter):
  
 
   for m in range(1,r+1):
-    #B_Y_0[m-1,r] = dict_t0[m-1]*dict_Y_0[r]
-    #B_Y_0[r,m-1] = dict_t0[r]*dict_Y_0[m-1]
-    
     B_Y_ia[m-1,r] = 2.0*np.einsum('ia,ia',dict_t1[m-1],dict_Y_ia[r])
     B_Y_ia[r,m-1] = 2.0*np.einsum('ia,ia',dict_t1[r],dict_Y_ia[m-1])
 
@@ -210,13 +169,11 @@ for x in range(0,n_iter):
     #B_Y_iuab[m-1,r] = np.einsum('iuab,iuab',dict_Sv[m-1],dict_Y_iuab[r])
     #B_Y_iuab[r,m-1] = np.einsum('iuab,iuab',dict_Sv[r],dict_Y_iuab[m-1])
 
-  #B_Y_0[r,r] = dict_t0[r]*dict_Y_0[r]
   B_Y_ia[r,r] = 2.0*np.einsum('ia,ia',dict_t1[r],dict_Y_ia[r])
   B_Y_ijab[r,r] = 2.0*np.einsum('ijab,ijab',dict_t2[r],dict_Y_ijab[r])-np.einsum('ijba,ijab',dict_t2[r],dict_Y_ijab[r])
   #B_Y_ijav[r,r] = np.einsum('ijav,ijav',dict_So[r],dict_Y_ijav[r])
   #B_Y_iuab[r,r] = np.einsum('iuab,iuab',dict_Sv[r],dict_Y_iuab[r])
    
-  #B_total = B_Y_ia+B_Y_ijab+B_Y_iuab+B_Y_ijav
   B_total = B_Y_ia+B_Y_ijab
   #print 'Print B Matrices:'
   #print B_total
@@ -244,8 +201,6 @@ for x in range(0,n_iter):
   coeff_total = vects_total[:,ind_min_wtotal]
   #print coeff_total
 
-  #coeff_total(imag(coeff_total) < 1e-8) = 0.0 
-   
   if (np.all(coeff_total).imag <= 1e-8):
     coeff_total = np.real(coeff_total)
     #print coeff_total
@@ -253,7 +208,6 @@ for x in range(0,n_iter):
   
 ##------Linear Combination--------------##
 
-  #x_t0 = 0.0
   x_t1 = np.zeros((occ,virt))
   x_t2 = np.zeros((occ,occ,virt,virt))      ###x_t1 and so on are the linear combination of the coefficient vector elements and the t1,t1,So and Sv values of successive iterations###
   #x_So = np.zeros((occ,occ,virt,o_act))
@@ -261,13 +215,11 @@ for x in range(0,n_iter):
 
   # x_t1 and x_t2 will only be required while starting a new subspace, so it should be done only for those special iterations
   for i in range(0,r+1):
-    #x_t0 += coeff_total[i]*dict_t0[i]
     x_t1 += np.linalg.multi_dot([coeff_total[i],dict_t1[i]])
     x_t2 += np.linalg.multi_dot([coeff_total[i],dict_t2[i]])
     #x_So += np.linalg.multi_dot([coeff_total[i],dict_So[i]])
     #x_Sv += np.linalg.multi_dot([coeff_total[i],dict_Sv[i]])
 
-  #lin_norm = x_t0*x_t0 
   lin_norm = 2.0*np.einsum('ia,ia',x_t1,x_t1)
   lin_norm += 2.0*np.einsum('ijab,ijab',x_t2,x_t2)-np.einsum('ijab,ijba',x_t2,x_t2)
   norm = math.sqrt(lin_norm)
@@ -278,20 +230,17 @@ for x in range(0,n_iter):
 
 ##------Formation of residual matrix--------##
   
-  #R_0 = 0.0
   R_ia = np.zeros((occ,virt))
   R_ijab = np.zeros((occ,occ,virt,virt))      
   #R_ijav = np.zeros((occ,occ,virt,o_act))
   #R_iuab = np.zeros((occ,v_act,virt,virt))
 
   for i in range(0,r+1):
-    #R_0 += (coeff_total[i]*dict_Y_0[i] - w_total[ind_min_wtotal]*coeff_total[i]*dict_t0[i]) 
     R_ia += (coeff_total[i]*dict_Y_ia[i] - w_total[ind_min_wtotal]*coeff_total[i]*dict_t1[i])
     R_ijab += (coeff_total[i]*dict_Y_ijab[i] - w_total[ind_min_wtotal]*coeff_total[i]*dict_t2[i])
     #R_ijav += (coeff_total[i]*dict_Y_ijav[i] - w_total[ind_min_wtotal]*x_So)
     #R_iuab += (coeff_total[i]*dict_Y_iuab[i] - w_total[ind_min_wtotal]*x_Sv)
 
-  #eps_t = abs(R_0) + cc_update.update_t1t2(R_ia,R_ijab,x_t1,x_t2)[0]
   eps_t = cc_update.update_t1t2(R_ia,R_ijab,x_t1,x_t2)[0]
   #eps_So = cc_update.update_So(R_ijav,x_So)[0]
   #eps_Sv = cc_update.update_Sv(R_iuab,x_Sv)[0]
@@ -307,29 +256,16 @@ for x in range(0,n_iter):
 ##--------Divide residue by denominator to get X--------##
 
 ## Using a different denominator that includes Omega 
-  #t0_2 = R_0
   t1_2 = davidson.get_XO(R_ia,D1,w_total[ind_min_wtotal])
   t2_2 = davidson.get_XO(R_ijab,D2,w_total[ind_min_wtotal])
-  ''' 
-  update_x_norm = t0_2*t0_2 
-  update_x_norm += 2.0*np.einsum('ia,ia',t1_2,t1_2)
-  update_x_norm += 2.0*np.einsum('ijab,ijab',t2_2,t2_2)-np.einsum('ijab,ijba',t2_2,t2_2)
-  nrm = math.sqrt(update_x_norm)
-  
-  t0_2 = t0_2/nrm 
-  t1_2 = t1_2/nrm
-  t2_2 = t2_2/nrm
-  '''
+
 ##------Schmidt orthogonalization----------##
   
-  #ortho_t0 = t0_2
   ortho_t1 = t1_2
   ortho_t2 = t2_2
   
   for i in range(0,r+1):
-    #ovrlap = dict_t0[i]*t0_2 + 2.0*np.einsum('ia,ia',t1_2,dict_t1[i]) + 2.0*np.einsum('ijab,ijab',t2_2,dict_t2[i]) - np.einsum('ijab,ijba',t2_2,dict_t2[i])
     ovrlap = 2.0*np.einsum('ia,ia',t1_2,dict_t1[i]) + 2.0*np.einsum('ijab,ijab',t2_2,dict_t2[i]) - np.einsum('ijab,ijba',t2_2,dict_t2[i])
-    #ortho_t0 += - ovrlap*dict_t0[i]
     ortho_t1 += - ovrlap*dict_t1[i]  
     ortho_t2 += - ovrlap*dict_t2[i]  
     #ortho_So += - np.einsum('ijav,ijav',dict_So[i],So_2)*dict_So[i]
@@ -342,26 +278,15 @@ for x in range(0,n_iter):
   #  q = 2.0*np.einsum('ijab,ijab',dict_t2[i],ortho_t2)-np.einsum('ijab,ijba',dict_t2[i],ortho_t2)
   #  y = p+q
   #  print "overlap:", i,p,q,y  
- #  #s = np.einsum('ijav,ijav',dict_So[i],ortho_So)
-
- #  #t = np.einsum('iuab,iuab',dict_Sv[i],ortho_Sv)
- #  #y= p+q+s+t
- #  y= p+q
-
- #  print 'OVERLAP ', i
- #  print p,q
- #  #print y
   
 ##--------Normalization of the new t and s------##
 
-  #ortho_norm = ortho_t0*ortho_t0   
   ortho_norm = 2.0*np.einsum('ia,ia',ortho_t1,ortho_t1)
   ortho_norm += 2.0*np.einsum('ijab,ijab',ortho_t2,ortho_t2)-np.einsum('ijab,ijba',ortho_t2,ortho_t2)
   norm_total = math.sqrt(ortho_norm)
 
   # Each part of the vector is divided by the total norm of the vector
   if (norm_total > 1e-9):
-    #norm_t0 = ortho_t0/norm_total
     norm_t1 = ortho_t1/norm_total
     norm_t2 = ortho_t2/norm_total
   else:  
@@ -370,10 +295,8 @@ for x in range(0,n_iter):
   
 ##-------updating value of X for the next iteration-------##
  
-  #dict_t0[r+1] = norm_t0
   dict_t1[r+1] = norm_t1
   dict_t2[r+1] = norm_t2
-  #nrm = (dict_t0[r+1]*dict_t0[r+1]) + 2.0*np.einsum('ia,ia',dict_t1[r+1],dict_t1[r+1]) + 2.0*np.einsum('ijab,ijab',dict_t2[r+1],dict_t2[r+1]) - np.einsum('ijab,ijba',dict_t2[r+1],dict_t2[r+1])
   nrm = 2.0*np.einsum('ia,ia',dict_t1[r+1],dict_t1[r+1]) + 2.0*np.einsum('ijab,ijab',dict_t2[r+1],dict_t2[r+1]) - np.einsum('ijab,ijba',dict_t2[r+1],dict_t2[r+1])
   print "final norm:", nrm 
 
