@@ -158,16 +158,17 @@ for x in range(0,n_iter):
     tau = cp.deepcopy(t2)
     tau += np.einsum('ia,jb->ijab',t1,t1)
     
-    I_vv, I_oo, Ivvvv, Ioooo, Iovvo, Iovvo_2, Iovov,Iovov_2,I_oovo, I_vovv = intermediates.initialize()
+    I_vv, I_oo, Ivvvv, Ioooo, Iovvo, Iovvo_2, Iovov,Iovov_2 = intermediates.initialize()
     I_oo,I_vv,Ioooo,Iovvo,Iovvo_2,Iovov = intermediates.update_int(tau,t2,I_vv,I_oo,Ioooo,Iovvo,Iovvo_2,Iovov)
     I1, I2 = intermediates.R_ia_intermediates(t1)
-    II_a, II_b = intermediates.disconnected_t2_terms(t1)
  
     R_ia = amplitude.singles(I1,I2,I_oo,I_vv,tau,t1,t2)
-    I_oo,I_vv,I_oovo,I_vovv,Ioooo_2,I_voov,Iovov_3,Iovvo_3,Iooov,I3=intermediates.singles_intermediates(t1,t2,tau,I_oo,I_vv,I2)
+    I_oo,I_vv,I_oovo,I_vovv,Ioooo_2,I_voov,Iovov_3,Iovvo_3,Iooov,I3=intermediates.singles_intermediates(t1,t2,I_oo,I_vv,I2)
+    II_a, II_b, II_c, II_d = intermediates.disconnected_t2_terms(Ivvvv,t1)
     R_ijab = amplitude.doubles(I_oo,I_vv,Ivvvv,Ioooo,Iovvo,Iovvo_2,Iovov,Iovov_2,tau,t2)
-    R_ijab += amplitude.singles_n_doubles(t1,I_oovo,I_vovv,II_a,II_b)
-    #R_ijab += amplitude.higher_order(t1,t2,Iovov_3,Iovvo_3,Iooov,I3,Ioooo_2,I_voov)
+    R_ijab += amplitude.singles_n_doubles(t1,I_oovo,I_vovv,II_a,II_b,II_c,II_d)
+    #R_ijab += amplitude.higher_order(t1,t2,Iooov,I3,Ioooo_2,I_voov,II_d,II_e)
+    #R_ijab += amplitude.higher_order(t1,t2,II_d,II_e)
     R_ijab = cc_symmetrize.symmetrize(R_ijab)
     
     oldt2 = t2.copy()

@@ -20,7 +20,8 @@ o_act = inp.o_act
 v_act = inp.v_act
 act = o_act + v_act
 
-#      Initialize intermediates for linear terms in CCD. LCCD is the default calculation
+##--------Initialize intermediates for linear terms in CCD. LCCD is the default calculation------##
+
 def initialize():
   I_vv = cp.deepcopy(Fock_mo[occ:nao,occ:nao])
   I_oo = cp.deepcopy(Fock_mo[:occ,:occ])
@@ -30,9 +31,7 @@ def initialize():
   Iovvo_2 = cp.deepcopy(twoelecint_mo[:occ,occ:nao,occ:nao,:occ])
   Iovov = cp.deepcopy(twoelecint_mo[:occ,occ:nao,:occ,occ:nao])
   Iovov_2 = cp.deepcopy(twoelecint_mo[:occ,occ:nao,:occ,occ:nao])
-  I_oovo = cp.deepcopy(twoelecint_mo[:occ,:occ,occ:nao,:occ])   ##these two intermediates should be removed
-  I_vovv = cp.deepcopy(twoelecint_mo[occ:nao,:occ,occ:nao,occ:nao])
-  return I_vv, I_oo, Ivvvv, Ioooo, Iovvo, Iovvo_2, Iovov, Iovov_2, I_oovo, I_vovv
+  return I_vv, I_oo, Ivvvv, Ioooo, Iovvo, Iovvo_2, Iovov, Iovov_2
   I_vv = None
   I_oo = None
   Ivvvv = None
@@ -46,11 +45,35 @@ def initialize():
   gc.collect()
 
   
-#      Introducing the non-linear doubles terms
+##--------Introducing the non-linear doubles terms-----------##
+
 def update_int(tau,t2,I_vv,I_oo,Ioooo,Iovvo,Iovvo_2,Iovov):
   I_vv += -2*np.einsum('cdkl,klad->ca',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t2) + np.einsum('cdkl,klda->ca',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t2)
 
-  I_oo += 2*np.einsum('cdkl,ilcd->ik',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],tau) - np.einsum('dckl,lidc->ik',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],tau)
+  I_oo += 2*np.einsum('cdkl,ilcd->ik',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t2) - np.einsum('dckl,lidc->ik',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t2) ##t2 should be changed to tau here
+
+  Ioooo += np.einsum('cdkl,ijcd->ijkl',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t2)
+
+  Iovvo += np.einsum('dclk,jlbd->jcbk',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t2) - np.einsum('dclk,jldb->jcbk',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t2) - 0.5*np.einsum('cdlk,jlbd->jcbk',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t2)
+
+  Iovvo_2 += -0.5*np.einsum('dclk,jldb->jcbk',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t2)  - np.einsum('dckl,ljdb->jcbk',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t2)
+ 
+  Iovov += -0.5*np.einsum('dckl,ildb->ickb',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t2)
+  
+  return I_oo,I_vv,Ioooo,Iovvo,Iovvo_2,Iovov
+  I_vv = None
+  I_oo = None
+  Iovvo = None
+  Iovvo_2 = None
+  Iovov = None
+  gc.collect()
+  
+##--------For Linear Response Theory-------##
+  
+def update_int_response(t2,I_vv,I_oo,Ioooo,Iovvo,Iovvo_2,Iovov):
+  I_vv += -2*np.einsum('cdkl,klad->ca',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t2) + np.einsum('cdkl,klda->ca',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t2)
+
+  I_oo += 2*np.einsum('cdkl,ilcd->ik',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t2) - np.einsum('dckl,lidc->ik',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t2)
 
   Ioooo += np.einsum('cdkl,ijcd->ijkl',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t2)
 
@@ -64,12 +87,10 @@ def update_int(tau,t2,I_vv,I_oo,Ioooo,Iovvo,Iovvo_2,Iovov):
   I_vv = None
   I_oo = None
   Ioooo = None
-  Iovvo = None
   Iovvo_2 = None
   Iovov = None
   gc.collect()
-  
-  
+
 ##-------Creating intermediates involving S which will lead to diagrams in R_ijab-------##
 
 def W1_int_So(x):
@@ -84,34 +105,8 @@ def W1_int_Sv(x):
   return II_vv
   gc.collect()
 
-def W2_intermediates(So,Sv):
-  print "________________"
-  # W2 terms
-  II_ovvo = np.zeros((occ,virt,virt,occ))
-  II_ovov = np.zeros((occ,virt,occ,virt)) 
-  IIoooo = np.zeros((occ,occ,occ,occ)) 
-  IIvvvv = np.zeros((virt,virt,virt,virt))
-  
-  IIoooo[:,:,:,occ-o_act:occ] += -2*np.einsum('cjkl,ilcv->ijkv',twoelecint_mo[occ:nao,:occ,:occ,:occ],So) + 4*np.einsum('cilk,ljcv->ijkv',twoelecint_mo[occ:nao,:occ,:occ,:occ],So) - 2*np.einsum('cikl,ljcv->ijkv',twoelecint_mo[occ:nao,:occ,:occ,:occ],So) - 2*np.einsum('ickl,jlcv->ijkv',twoelecint_mo[:occ,occ:nao,:occ,:occ],So) 
-
-  IIvvvv[:,:v_act,:,:] += -2*np.einsum('cdlb,luad->cuab',twoelecint_mo[occ:nao,occ:nao,:occ,occ:nao],Sv) + 4*np.einsum('dcka,kudb->cuab',twoelecint_mo[occ:nao,occ:nao,:occ,occ:nao],Sv) - 2*np.einsum('cdla,ludb->cuab',twoelecint_mo[occ:nao,occ:nao,:occ,occ:nao],Sv) - 2*np.einsum('dcla,lubd->cuab',twoelecint_mo[occ:nao,occ:nao,:occ,occ:nao],Sv)
-  
-  II_ovvo[:,:,:,occ-o_act:occ] += np.einsum('jckl,klbv->jcbv',twoelecint_mo[:occ,occ:nao,:occ,:occ],So) - np.einsum('dcbl,jldv->jcbv',twoelecint_mo[occ:nao,occ:nao,occ:nao,:occ],So)
-  II_ovvo[:,:v_act,:,:] += -np.einsum('iclk,luac->iuak',twoelecint_mo[:occ,occ:nao,:occ,:occ],Sv) + np.einsum('dcak,iudc->iuak',twoelecint_mo[occ:nao,occ:nao,occ:nao,:occ],Sv) 
-  
-  II_ovov[:,:v_act,:,:] += 2*np.einsum('dilk,ludb->iukb',twoelecint_mo[occ:nao,:occ,:occ,:occ],Sv) + np.einsum('dckb,iudc->iukb',twoelecint_mo[occ:nao,occ:nao,:occ,occ:nao],Sv) - np.einsum('cikl,lucb->iukb',twoelecint_mo[occ:nao,:occ,:occ,:occ],Sv) - np.einsum('ickl,lubc->iukb',twoelecint_mo[:occ,occ:nao,:occ,:occ],Sv)
-  II_ovov[:,:,occ-o_act:occ,:] += 2*np.einsum('dclb,lidv->icvb',twoelecint_mo[occ:nao,occ:nao,:occ,occ:nao],So) + np.einsum('cilk,lkbv->icvb',twoelecint_mo[occ:nao,:occ,:occ,:occ],So) - np.einsum('cdkb,kidv->icvb',twoelecint_mo[occ:nao,occ:nao,:occ,occ:nao],So) - np.einsum('cdbk,ikdv->icvb',twoelecint_mo[occ:nao,occ:nao,occ:nao,:occ],So) 
-  
-  return IIoooo, IIvvvv, II_ovvo, II_ovov
-  IIvvvv = None
-  IIoooo = None
-  II_ovvo = None
-  II_ovov = None
-  gc.collect()
-
 #     Create intermediates for contribution of singles to R_ijab  
 def R_ia_intermediates(t1):
-
   I1 = 2*np.einsum('cbkj,kc->bj',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t1)
   I2 = -np.einsum('cbjk,kc->bj',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t1)
   return I1,I2
@@ -119,12 +114,12 @@ def R_ia_intermediates(t1):
   I2 = None
   
   
-def singles_intermediates(t1,t2,tau,I_oo,I_vv,I2):
+def singles_intermediates(t1,t2,I_oo,I_vv,I2):
   I_oo += 2*np.einsum('ibkj,jb->ik',twoelecint_mo[:occ,occ:nao,:occ,:occ],t1)    #intermediate for diagrams 5
   I_oo += -np.einsum('ibjk,jb->ik',twoelecint_mo[:occ,occ:nao,:occ,:occ],t1)     #intermediate for diagrams 8
   I_vv += 2*np.einsum('bcja,jb->ca',twoelecint_mo[occ:nao,occ:nao,:occ,occ:nao],t1)    #intermediate for diagrams 6
   I_vv += -np.einsum('cbja,jb->ca',twoelecint_mo[occ:nao,occ:nao,:occ,occ:nao],t1)    #intermediate for diagrams 7
-  I_vv += -2*np.einsum('dclk,ld,ka->ca',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t1,t1)  #intermediate for diagram 34'
+  #I_vv += -2*np.einsum('dclk,ld,ka->ca',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t1,t1)  #intermediate for diagram 34'
   
   I_oovo = np.zeros((occ,occ,virt,occ))
   I_oovo += -np.einsum('cikl,jlca->ijak',twoelecint_mo[occ:nao,:occ,:occ,:occ],t2)    #intermediate for diagrams 11
@@ -166,24 +161,20 @@ def singles_intermediates(t1,t2,tau,I_oo,I_vv,I2):
   I3 = None
   gc.collect()
   
-def disconnected_t1_terms(t1):
-  I_a = -np.einsum('ibkj,ka->ibaj',twoelecint_mo[:occ,occ:nao,:occ,:occ],t1) ##int for diagram a
-  I_b = -np.einsum('ibkj,ja->ibka',twoelecint_mo[:occ,occ:nao,:occ,:occ],t1) ##int for diagram b
-  I_c = np.einsum('cdak,ic->idak',twoelecint_mo[occ:nao,occ:nao,occ:nao,:occ],t1) ##int for diagram c
-  I_d = np.einsum('cdak,id->caik',twoelecint_mo[occ:nao,occ:nao,occ:nao,:occ],t1) ##int for diagram d
-  return I_a, I_b, I_c, I_d
-  I_a = None
-  I_b = None
-  I_c = None
-  I_d = None
-  gc.collect()
-
-def disconnected_t2_terms(t1):
+def disconnected_t2_terms(Ivvvv,t1):
   II_a = -np.einsum('ickb,ka->icab',twoelecint_mo[:occ,occ:nao,:occ,occ:nao],t1) #int for non-linear 3
   II_b = np.einsum('icak,jc->ijak',twoelecint_mo[:occ,occ:nao,occ:nao,:occ],t1) #int for non-linear 4
-  return II_a, II_b
+  II_c = np.einsum('cdab,ic->idab',Ivvvv,t1) #int for non-linear 2
+  II_d = np.einsum('ijkl,ka->ijal',twoelecint_mo[:occ,:occ,:occ,:occ],t1) #int for non-linear 1
+  #II_d = np.einsum('ickb,jc->ijkb',Iovov_3,t1) #int for diagram 36
+  #II_e = np.einsum('jcbk,ic->jibk',Iovvo_3,t1) #int for diagram 32,33,31,30
+  return II_a, II_b, II_c, II_d
+  Ivvvv = None
   II_a = None
   II_b = None
+  II_c = None
+  II_d = None
+  II_e = None
   gc.collect()
 
 

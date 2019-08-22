@@ -54,7 +54,6 @@ def singles(I1,I2,I_oo,I_vv,tau,t1,t2):
 ##-------Function exclusive for LRT i.e there is no bare hamiltonian term------##
 
 def singles_response(I1,I2,I_oo,I_vv,t1,t2):
-
   R_ia = -np.einsum('ik,ka->ia',I_oo,t1)                                          #diagrams 1,l,j,m,n
   I_oo = None
   R_ia += np.einsum('ca,ic->ia',I_vv,t1)                                           #diagrams 2,k,i
@@ -63,7 +62,6 @@ def singles_response(I1,I2,I_oo,I_vv,t1,t2):
   R_ia += np.einsum('ibkj,jkab->ia',twoelecint_mo[:occ,occ:nao,:occ,:occ],t2)     #diagrams 6 
   R_ia += 2*np.einsum('cdak,ikcd->ia',twoelecint_mo[occ:nao,occ:nao,occ:nao,:occ],t2) #diagrams 7 
   R_ia += -np.einsum('cdak,ikdc->ia',twoelecint_mo[occ:nao,occ:nao,occ:nao,:occ],t2) #diagrams 8 
-  
 
   R_ia += 2*np.einsum('bj,ijab->ia',I1,t2) - np.einsum('bj,ijba->ia',I1,t2)     #diagrams e,f
   I1 = None
@@ -82,11 +80,11 @@ def doubles(I_oo,I_vv,Ivvvv,Ioooo,Iovvo,Iovvo_2,Iovov,Iovov_2,tau,t2):
   R_ijab = 0.5*cp.deepcopy(twoelecint_mo[:occ,:occ,occ:nao,occ:nao])
   R_ijab += -np.einsum('ik,kjab->ijab',I_oo,t2)            #diagrams 1,25,27,5,8,35,38'
   I_oo = None
-  R_ijab += np.einsum('ca,ijcb->ijab',I_vv,t2)              #diagrams 2,24,25,34',non-linear 6,7
+  R_ijab += np.einsum('ca,ijcb->ijab',I_vv,t2)              #diagrams 2,24,26,34',non-linear 6,7
   I_vv = None
-  R_ijab += 0.5*np.einsum('cdab,ijcd->ijab',Ivvvv,tau)      #diagram 2,linear 5
+  R_ijab += 0.5*np.einsum('cdab,ijcd->ijab',Ivvvv,t2)      #diagram 2,linear 5
   Ivvvv = None
-  R_ijab += 0.5*np.einsum('ijkl,klab->ijab',Ioooo,tau)          #diagrams 1,38 and linear 9 with twoelecint
+  R_ijab += 0.5*np.einsum('ijkl,klab->ijab',Ioooo,t2)          #diagrams 1,38 and linear 9 with twoelecint
   Ioooo = None
   R_ijab += 2*np.einsum('jcbk,kica->ijab',Iovvo,t2)      #diagram 6 linear if we use twoelecint 
   Iovvo =None
@@ -102,19 +100,19 @@ def doubles(I_oo,I_vv,Ivvvv,Ioooo,Iovvo,Iovvo_2,Iovov,Iovov_2,tau,t2):
 
 ##-------Similar as R_ia for LRT i.e no bare hamiltonian term---------##
 
-def doubles_response(I_oo,I_vv,Ivvvv,Ioooo,Iovvo,Iovvo_2,Iovov,Iovov_2,tau,t2):
+def doubles_response(I_oo,I_vv,Ivvvv,Ioooo,Iovvo,Iovvo_2,Iovov,Iovov_2,t2):
   print " "
   R_ijab = -np.einsum('ik,kjab->ijab',I_oo,t2)            #diagrams 1,25,27,5,8,35,38'
   I_oo = None
-  R_ijab += np.einsum('ca,ijcb->ijab',I_vv,t2)              #diagrams 2,24,25,34',non-linear 6,7
+  R_ijab += np.einsum('ca,ijcb->ijab',I_vv,t2)              #diagrams 2,24,26,34',non-linear 6,7
   I_vv = None
-  R_ijab += 0.5*np.einsum('cdab,ijcd->ijab',Ivvvv,tau)      #linear 5
+  R_ijab += 0.5*np.einsum('cdab,ijcd->ijab',Ivvvv,t2)      #linear 5
   Ivvvv = None
-  R_ijab += 0.5*np.einsum('ijkl,klab->ijab',Ioooo,tau)          #diagrams 1,38 and linear 9 with twoelecint
+  R_ijab += 0.5*np.einsum('ijkl,klab->ijab',Ioooo,t2)          #diagrams 1,38 and linear 9 with twoelecint
   Ioooo = None
-  R_ijab += 2*np.einsum('jcbk,kica->ijab',Iovvo,t2)      #diagram 6 linear if we use twoelecint 
+  R_ijab += 2*np.einsum('jcbk,kica->ijab',Iovvo,t2)      #diagram linear6 and non-lin 19,28,20
   Iovvo =None
-  R_ijab += - np.einsum('jcbk,ikca->ijab',Iovvo_2,t2)  #diagram 8 linear if we use twoelecint 
+  R_ijab += - np.einsum('jcbk,ikca->ijab',Iovvo_2,t2)  #diagram lin8 and non-lin 21, 
   Iovvo_2 = None
   R_ijab += - np.einsum('ickb,kjac->ijab',Iovov,t2)    #linear 10 with twoelecint
   Iovov = None
@@ -126,51 +124,42 @@ def doubles_response(I_oo,I_vv,Ivvvv,Ioooo,Iovvo,Iovvo_2,Iovov,Iovov_2,tau,t2):
 
 ##------t1 terms contributing to R_ijab--------##
 
-def singles_n_doubles(t1,I_oovo,I_vovv,II_a,II_b):
+def singles_n_doubles(t1,I_oovo,I_vovv,II_a,II_b,II_c,II_d):
   R_ijab = -np.einsum('ijak,kb->ijab',I_oovo,t1)       #diagrams 11,12,13,15,17
+  I_oovo = None
   R_ijab += np.einsum('cjab,ic->ijab',I_vovv,t1)       #diagrams 9,10,14,16,18,31,37,39
+  I_vovv = None
   R_ijab += -np.einsum('ijkb,ka->ijab',twoelecint_mo[:occ,:occ,:occ,occ:nao],t1)           #diagram linear 3
   R_ijab += np.einsum('cjab,ic->ijab',twoelecint_mo[occ:nao,:occ,occ:nao,occ:nao],t1)      #diagram linear 4
   R_ijab += np.einsum('icab,jc->ijab',II_a,t1)       #diagrams non-linear 3
+  II_a = None
   R_ijab += -np.einsum('ijak,kb->ijab',II_b,t1)       #diagrams non-linear 4
+  II_b = None
+  R_ijab += 0.5*np.einsum('idab,jd->ijab',II_c,t1)       #diagrams non-linear 2
+  II_c = None
+  R_ijab += 0.5*np.einsum('ijal,lb->ijab',II_d,t1)       #diagrams non-linear 1
+  II_d = None
   return R_ijab
   R_ijab = None
-  I_oovo = None
-  I_vovv = None
   gc.collect() 
 
 ##------Higher orders of t1 contributing to R_ijab-------##
 
-def higher_order(t1,t2,Iovov_3,Iovvo_3,Iooov,I3,Ioooo_2,I_voov):
-  R_ijab = -np.einsum('ickb,jc,ka->ijab',Iovov_3,t1,t1)       #diagrams 36
-  R_ijab += -np.einsum('jcbk,ic,ka->ijab',Iovvo_3,t1,t1)      #diagrams 32,33,31,30
-  R_ijab += -np.einsum('ijlb,la->ijab',Iooov,t1)      #diagram 34,30
-  R_ijab += -0.5*np.einsum('idal,jd,lb->ijab',I3,t1,t1)      #diagram 40
-  R_ijab += np.einsum('ijkl,klab->ijab',Ioooo_2,t2)      #diagram 37
-  R_ijab += -np.einsum('cjlb,ic,la->ijab',I_voov,t1,t1)      #diagram 39
+def higher_order(t1,t2,II_d,II_e):#,Iooov,I3,Ioooo_2,I_voov,II_d,II_e):
+  R_ijab = -np.einsum('ijkb,ka->ijab',II_d,t1)       #diagrams 36
+  R_ijab += -np.einsum('jibk,ka->ijab',II_e,t1)      #diagrams 32,33,31,30
+  #R_ijab += -np.einsum('ijlb,la->ijab',Iooov,t1)      #diagram 34,30
+  #R_ijab += -0.5*np.einsum('idal,jd,lb->ijab',I3,t1,t1)      #diagram 40
+  #R_ijab += np.einsum('ijkl,klab->ijab',Ioooo_2,t2)      #diagram 37
+  #R_ijab += -np.einsum('cjlb,ic,la->ijab',I_voov,t1,t1)      #diagram 39
   return R_ijab
   R_ijab = None 
-  Iovov_3 = None 
   Iovvo_3 = None 
   Iooov = None 
   I3 = None 
   Ioooo_2 = None 
   I_voov = None
-  gc.collect()
-
-##----------------------------##
-
-def disconnect_t1(I_a,I_b,I_c,I_d,t1):
-  R_ia = 2*np.einsum('ibaj,jb->ia',I_a,t1)  #diagram a 
-  R_ia += -np.einsum('ibka,kb->ia',I_b,t1)   #diagram b
-  R_ia += 2*np.einsum('idak,kd->ia',I_c,t1)  #diagram c
-  R_ia += -np.einsum('caik,kc->ia',I_d,t1)   #diagram d
-  return R_ia
-  R_ia = None
-  I_a = None
-  I_b = None
-  I_c = None
-  I_d = None
+  II_d = None
   gc.collect()
 
 ##--------Constructing S diagrams-------------------##
