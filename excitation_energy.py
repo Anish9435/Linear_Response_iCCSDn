@@ -33,6 +33,8 @@ Dv = MP2.Dv
 t1_new,t2_new,So_new,Sv_new = davidson.guess_X(occ,virt,o_act,v_act)
 t0 = 1.0
 print t1
+twoelecint_mo = MP2.twoelecint_mo 
+nao = MP2.nao
 
 ##-----------Initialization of Dictionaries for storing the values----------##
 
@@ -100,6 +102,19 @@ for x in range(0,n_iter):
   II_a, II_b, II_c, II_d = intermediates.disconnected_t2_terms(Ivvvv,t1) 
  
   Y_ia = amplitude.singles_response(I1,I2,I_oo,I_vv,dict_t1[r],dict_t2[r])
+
+  ####  This are the diagrams for Y_ia which were missing ####
+  Y_ia += -2*np.einsum('ibkj,ka,jb->ia',twoelecint_mo[:occ,occ:nao,:occ,:occ],t1,dict_t1[r])
+  Y_ia +=  2*np.einsum('cbaj,ic,jb->ia',twoelecint_mo[occ:nao,occ:nao,occ:nao,:occ],t1,dict_t1[r])
+  Y_ia +=  np.einsum('ibjk,ka,jb->ia',twoelecint_mo[:occ,occ:nao,:occ,:occ],t1,dict_t1[r])
+  Y_ia += -np.einsum('cbja,ic,jb->ia',twoelecint_mo[occ:nao,occ:nao,:occ,occ:nao],t1,dict_t1[r])
+
+  Y_ia +=  4*np.einsum('bcjk,ijab,kc->ia',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t2,dict_t1[r])
+  Y_ia += -2*np.einsum('bcjk,ijba,kc->ia',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t2,dict_t1[r])
+  Y_ia += -2*np.einsum('bcjk,ikab,jc->ia',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t2,dict_t1[r])
+  Y_ia +=  1*np.einsum('bcjk,ikba,jc->ia',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t2,dict_t1[r])
+  ####  This are the diagrams for Y_ia which were missing ####
+
   Y_ijab = amplitude.doubles_response(I_oo,I_vv,Ivvvv,Ioooo,Iovvo,Iovvo_2,Iovov,Iovov_2,dict_t2[r])
   Y_ijab += amplitude.singles_n_doubles(dict_t1[r],I_oovo,I_vovv,II_a,II_b,II_c,II_d)
   Y_ijab = cc_symmetrize.symmetrize(Y_ijab)
