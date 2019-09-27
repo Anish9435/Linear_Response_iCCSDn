@@ -17,7 +17,6 @@ t1 = main.t1
 t2 = main.t2
 So = main.So
 Sv = main.Sv
-#tau = main.tau
 occ = MP2.occ
 virt = MP2.virt
 nao = MP2.nao
@@ -88,7 +87,8 @@ for x in range(0,n_iter):
       dict_t2[r] = x_t2
       dict_So[r] = x_So
       dict_Sv[r] = x_Sv
-  
+    #print "dict_So" 
+    #print dict_So[r] 
 ##------Diagrams and intermediates of coupled cluster theory i.e AX with new t and s---------##
   I_vv, I_oo, Ivvvv, Ioooo, Iovvo, Iovvo_2, Iovov,Iovov_2 = intermediates.initialize()
 ##-------------Linear terms of both R_ia and R_ijab--------------##
@@ -122,6 +122,10 @@ for x in range(0,n_iter):
   II_oo_new = intermediates.W1_int_So(dict_So[r])
   II_vv = intermediates.W1_int_Sv(Sv)
   II_vv_new = intermediates.W1_int_Sv(dict_Sv[r])
+  #print "II_oo_new"
+  #print II_oo_new
+  #print "II_oo"
+  #print II_oo
 ##------------------------------------------------------------##
 ##-----------------Two body diagrams--------------------------##
   Y_ijab += amplitude_response.doubles_response_quadratic(I_oo,I_vv,Ioooo,Iovvo,Iovvo_2,Iovov,dict_t2[r]) 
@@ -139,17 +143,30 @@ for x in range(0,n_iter):
   Y_ijab += -np.einsum('ickb,ka,jc->ijab',twoelecint_mo[:occ,occ:nao,:occ,occ:nao],dict_t1[r],t1)   #diagrams non-linear 3
   Y_ijab += -np.einsum('icak,jc,kb->ijab',twoelecint_mo[:occ,occ:nao,occ:nao,:occ],dict_t1[r],t1)   #diagrams non-linear 4
 
+  print "Y_ijab"
+  print Y_ijab
+##---------------------A_lambda So and Sv sector------------##
   Y_ijab += amplitude_response.inserted_diag_So(dict_t2[r],II_oo)
   Y_ijab += amplitude_response.inserted_diag_So(t2,II_oo_new)
   Y_ijab += amplitude_response.inserted_diag_Sv(dict_t2[r],II_vv)
-  Y_ijab += amplitude_response.inserted_diag_Sv(t2,II_vv)
+  Y_ijab += amplitude_response.inserted_diag_Sv(t2,II_vv_new)
   Y_ijab = cc_symmetrize.symmetrize(Y_ijab)
+
+  print "Y_ijab"
+  print Y_ijab
 ##------------------------------------------------------------##
-##----------Diagram contributing to R_ijav and R_iuab------------## 
-  Y_iuab = amplitude_response.Sv_diagram_vs_contraction_response(dict_Sv[r],II_vv)
-  Y_iuab += amplitude_response.Sv_diagram_vt_contraction_response(dict_t2[r])
-  Y_ijav = amplitude_response.So_diagram_vs_contraction_response(dict_So[r],II_oo)
-  Y_ijav += amplitude_response.So_diagram_vt_contraction_response(dict_t2[r])
+##---------------------A_kappa Sv sector------------## 
+  Y_iuab = amplitude_response.Sv_diagram_vs_contraction_response(dict_Sv[r])
+##--------------------A_kappa T sector------------##
+  #Y_iuab += amplitude_response.Sv_diagram_vt_contraction_response(dict_t2[r])
+  #Y_iuab += amplitude_response.T1_contribution_Sv_response(dict_t1[r])
+##---------------------A_kappa So sector------------## 
+  Y_ijav = amplitude_response.So_diagram_vs_contraction_response(dict_So[r])
+##----------------------A_kappa T sector------------##
+  #Y_ijav += amplitude_response.So_diagram_vt_contraction_response(dict_t2[r])
+  #Y_ijav += amplitude_response.T1_contribution_So_response(dict_t1[r])
+  #print "Y_ijav"
+  #print Y_ijav
 ##-------------------------------------------------------------------------------------------##
 ##-------Storing AX in the dictionary---------##
   
@@ -233,7 +250,6 @@ for x in range(0,n_iter):
   x_So = np.zeros((occ,occ,virt,o_act))
   x_Sv = np.zeros((occ,v_act,virt,virt))
 
-  # x_t1 and x_t2 will only be required while starting a new subspace, so it should be done only for those special iterations
   for i in range(0,r+1):
     x_t1 += np.linalg.multi_dot([coeff_total[i],dict_t1[i]])
     x_t2 += np.linalg.multi_dot([coeff_total[i],dict_t2[i]])
@@ -243,7 +259,7 @@ for x in range(0,n_iter):
   lin_norm = 2.0*np.einsum('ia,ia',x_t1,x_t1)
   lin_norm += 2.0*np.einsum('ijab,ijab',x_t2,x_t2)-np.einsum('ijab,ijba',x_t2,x_t2)
   lin_norm += 2.0*np.einsum('ijav,ijav',x_So,x_So)-np.einsum('ijav,jiav',x_So,x_So)
-  lin_norm += 2.0*np.einsum('iuab,iuba',x_Sv,x_Sv)-np.einsum('iuab,iuba',x_Sv,x_Sv)
+  lin_norm += 2.0*np.einsum('iuab,iuab',x_Sv,x_Sv)-np.einsum('iuab,iuba',x_Sv,x_Sv)
   norm = math.sqrt(lin_norm)
  
   if (norm > 1e-9):
@@ -278,7 +294,6 @@ for x in range(0,n_iter):
 
 ##--------Divide residue by denominator to get X--------##
 
-## Using a different denominator that includes Omega 
   t1_2 = davidson.get_XO(R_ia,D1,w_total[ind_min_wtotal])
   t2_2 = davidson.get_XO(R_ijab,D2,w_total[ind_min_wtotal])
   So_2 = davidson.get_XO(R_ijav,Do,w_total[ind_min_wtotal])
@@ -292,31 +307,28 @@ for x in range(0,n_iter):
   ortho_Sv = Sv_2
   
   for i in range(0,r+1):
-    nrm = 2.0*np.einsum('ia,ia',dict_t1[i],dict_t1[i]) + 2.0*np.einsum('ijab,ijab',dict_t2[i],dict_t2[i]) - np.einsum('ijab,ijba',dict_t2[i],dict_t2[i]) + 2.0*np.einsum('ijav,ijav',dict_So[i],dict_So[i]) - np.einsum('ijav,jiav',dict_So[i],dict_So[i]) + 2.0*np.einsum('iuab,iuab',dict_Sv[i],dict_Sv[i]) - np.einsum('iuab,iuba',dict_Sv[i],dict_Sv[i])
-
     ovrlap = 2.0*np.einsum('ia,ia',t1_2,dict_t1[i]) + 2.0*np.einsum('ijab,ijab',t2_2,dict_t2[i]) - np.einsum('ijab,ijba',t2_2,dict_t2[i]) + 2.0*np.einsum('ijav,ijav',So_2,dict_So[r]) - np.einsum('ijav,jiav',So_2,dict_So[r]) + 2.0*np.einsum('iuab,iuab',Sv_2,dict_Sv[r]) - np.einsum('iuab,iuba',Sv_2,dict_Sv[r])
 
-    ortho_t1 += -(ovrlap*dict_t1[i])/nrm  
-    ortho_t2 += -(ovrlap*dict_t2[i])/nrm  
-    ortho_So += -(ovrlap*dict_So[i])/nrm  
-    ortho_Sv += -(ovrlap*dict_Sv[i])/nrm  
+    ortho_t1 += -ovrlap*dict_t1[i]  
+    ortho_t2 += -ovrlap*dict_t2[i]  
+    ortho_So += -ovrlap*dict_So[i]  
+    ortho_Sv += -ovrlap*dict_Sv[i]  
   #for i in range(0,r+1):
-   # p = 2.0*np.einsum('ia,ia',dict_t1[i],ortho_t1)
-   # q = 2.0*np.einsum('ijab,ijab',dict_t2[i],ortho_t2)-np.einsum('ijab,ijba',dict_t2[i],ortho_t2)
-   # t = 2.0*np.einsum('ijav,ijav',dict_So[i],ortho_So)-np.einsum('ijab,jiav',dict_So[i],ortho_So)
-   # d = 2.0*np.einsum('iuab,iuab',dict_Sv[i],ortho_Sv)-np.einsum('iuab,iuba',dict_Sv[i],ortho_Sv)
-   # y = p+q+t+d
-   # print "overlap:", i,p,q,t,d,y  
+  #  p = 2.0*np.einsum('ia,ia',dict_t1[i],ortho_t1)
+  #  q = 2.0*np.einsum('ijab,ijab',dict_t2[i],ortho_t2)-np.einsum('ijab,ijba',dict_t2[i],ortho_t2)
+  #  t = 2.0*np.einsum('ijav,ijav',dict_So[i],ortho_So)-np.einsum('ijav,jiav',dict_So[i],ortho_So)
+  #  d = 2.0*np.einsum('iuab,iuab',dict_Sv[i],ortho_Sv)-np.einsum('iuab,iuba',dict_Sv[i],ortho_Sv)
+  #  y = p+q+t+d
+  #  print "overlap:", i,p,q,t,d,y  
  
 ##--------Normalization of the new t and s------##
 
   ortho_norm = 2.0*np.einsum('ia,ia',ortho_t1,ortho_t1)
   ortho_norm += 2.0*np.einsum('ijab,ijab',ortho_t2,ortho_t2)-np.einsum('ijab,ijba',ortho_t2,ortho_t2)
   ortho_norm += 2.0*np.einsum('ijav,ijav',ortho_So,ortho_So)-np.einsum('ijav,jiav',ortho_So,ortho_So)
-  ortho_norm += 2.0*np.einsum('iuab,iuba',ortho_Sv,ortho_Sv)-np.einsum('iuab,iuba',ortho_Sv,ortho_Sv)
+  ortho_norm += 2.0*np.einsum('iuab,iuab',ortho_Sv,ortho_Sv)-np.einsum('iuab,iuba',ortho_Sv,ortho_Sv)
   norm_total = math.sqrt(ortho_norm)
 
-  # Each part of the vector is divided by the total norm of the vector
   if (norm_total > 1e-9):
     norm_t1 = ortho_t1/norm_total
     norm_t2 = ortho_t2/norm_total
@@ -332,6 +344,7 @@ for x in range(0,n_iter):
   dict_t2[r+1] = norm_t2
   dict_So[r+1] = norm_So
   dict_Sv[r+1] = norm_Sv
+
   nrm = 2.0*np.einsum('ia,ia',dict_t1[r+1],dict_t1[r+1]) + 2.0*np.einsum('ijab,ijab',dict_t2[r+1],dict_t2[r+1]) - np.einsum('ijab,ijba',dict_t2[r+1],dict_t2[r+1]) + 2.0*np.einsum('ijav,ijav',dict_So[r+1],dict_So[r+1]) - np.einsum('ijav,jiav',dict_So[r+1],dict_So[r+1]) + 2.0*np.einsum('iuab,iuab',dict_Sv[r+1],dict_Sv[r+1]) - np.einsum('iuab,iuba',dict_Sv[r+1],dict_Sv[r+1])
   print "final norm:", nrm 
      

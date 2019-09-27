@@ -134,7 +134,7 @@ def inserted_diag_Sv(t2,II_vv):
 
 ##--------Constructing S diagrams-------------------##
 
-def Sv_diagram_vs_contraction_response(Sv,II_vv):
+def Sv_diagram_vs_contraction_response(Sv):
   R_iuab = -np.einsum('ik,kuab->iuab',Fock_mo[:occ,:occ],Sv)
   R_iuab += np.einsum('da,iudb->iuab',Fock_mo[occ:nao,occ:nao],Sv)
   R_iuab += np.einsum('db,iuad->iuab',Fock_mo[occ:nao,occ:nao],Sv)
@@ -162,7 +162,7 @@ def Sv_diagram_vt_contraction_response(t2):
   R_iuab = None
   gc.collect() 
  
-def So_diagram_vs_contraction_response(So,II_oo):
+def So_diagram_vs_contraction_response(So):
   R_ijav = np.einsum('da,ijdv->ijav',Fock_mo[occ:nao,occ:nao],So)
   R_ijav += -np.einsum('jl,ilav->ijav',Fock_mo[:occ,:occ],So)
   R_ijav += -np.einsum('il,ljav->ijav',Fock_mo[:occ,:occ],So)
@@ -182,9 +182,23 @@ def So_diagram_vt_contraction_response(t2):
   R_ijav = -np.einsum('djlv,liad->ijav',twoelecint_mo[occ:nao,:occ,:occ,occ-o_act:occ],t2)
   R_ijav += -np.einsum('djvl,lida->ijav',twoelecint_mo[occ:nao,:occ,occ-o_act:occ,:occ],t2)
   R_ijav += np.einsum('cdva,jicd->ijav',twoelecint_mo[occ:nao,occ:nao,occ-o_act:occ,occ:nao],t2)
-  R_ijav += -np.einsum('idlv,ljad->ijav',twoelecint_mo[:occ,occ:nao,:occ,occ-o_act:occ],t2)
+  R_ijav = -np.einsum('idlv,ljad->ijav',twoelecint_mo[:occ,occ:nao,:occ,occ-o_act:occ],t2)
   R_ijav += 2*np.einsum('djlv,lida->ijav',twoelecint_mo[occ:nao,:occ,:occ,occ-o_act:occ],t2)
   return R_ijav
 
   R_ijav = None
   gc.collect()
+
+def T1_contribution_Sv_response(t1):
+  R_iuab = -np.einsum('uika,kb->iuab',twoelecint_mo[occ:occ+v_act,:occ,:occ,occ:nao],t1)
+  R_iuab += np.einsum('duab,id->iuab',twoelecint_mo[occ:nao,occ:occ+v_act,occ:nao,occ:nao],t1)
+  R_iuab += -np.einsum('iukb,ka->iuab',twoelecint_mo[:occ,occ:occ+v_act,:occ,occ:nao],t1)
+  return R_iuab
+  R_iuab = None
+
+def T1_contribution_So_response(t1):
+  R_ijav = np.einsum('diva,jd->ijav',twoelecint_mo[occ:nao,:occ,occ-o_act:occ,occ:nao],t1)
+  R_ijav += np.einsum('djav,id->ijav',twoelecint_mo[occ:nao,:occ,occ:nao,occ-o_act:occ],t1)
+  R_ijav += -np.einsum('ijkv,ka->ijav',twoelecint_mo[:occ,:occ,:occ,occ-o_act:occ],t1)
+  return R_ijav
+  R_ijav = None
