@@ -164,12 +164,8 @@ for x in range(0,n_iter):
  
     R_ia = amplitude.singles(I1,I2,I_oo,I_vv,tau,t1,t2)
     I_oo,I_vv,I_oovo,I_vovv,Ioooo_2,I_voov,Iovov_3,Iovvo_3,Iooov,I3=intermediates.singles_intermediates(t1,t2,I_oo,I_vv,I2)
-    #II_a, II_b, II_c, II_d = intermediates.disconnected_t2_terms(t1)
-    #II_a, II_b = intermediates.disconnected_t2_terms(t1)
     R_ijab = amplitude.doubles(I_oo,I_vv,Ivvvv,Ioooo,Iovvo,Iovvo_2,Iovov,Iovov_2,tau,t2)
     R_ijab += amplitude.singles_n_doubles(t1,I_oovo,I_vovv)
-    #R_ijab += amplitude.higher_order(t1,t2,Iooov,I3,Ioooo_2,I_voov,II_d,II_e)
-    #R_ijab += amplitude.higher_order(t1,t2,II_d,II_e)
     R_ijab = cc_symmetrize.symmetrize(R_ijab)
     
     oldt2 = t2.copy()
@@ -221,7 +217,7 @@ for x in range(0,n_iter):
     R_ia = amplitude.singles(I1,I2,I_oo,I_vv,tau,t1,t2)
     I_oo,I_vv,I_oovo,I_vovv,Ioooo_2,I_voov,Iovov_3,Iovvo_3,Iooov,I3=intermediates.singles_intermediates(t1,t2,I_oo,I_vv,I2)
     R_ijab = amplitude.doubles(I_oo,I_vv,Ivvvv,Ioooo,Iovvo,Iovvo_2,Iovov,Iovov_2,tau,t2)
-    R_ijab += amplitude.singles_n_doubles(t1,I_oovo,I_vovv) #needs to be removed
+    R_ijab += amplitude.singles_n_doubles(t1,I_oovo,I_vovv) 
     R_ijab += amplitude.inserted_diag_So(t2,II_oo) 
     R_ijab += amplitude.inserted_diag_Sv(t2,II_vv) 
     R_ijab = cc_symmetrize.symmetrize(R_ijab)

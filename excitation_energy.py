@@ -87,8 +87,6 @@ for x in range(0,n_iter):
       dict_t2[r] = x_t2
       dict_So[r] = x_So
       dict_Sv[r] = x_Sv
-    #print "dict_So" 
-    #print dict_So[r] 
 ##------Diagrams and intermediates of coupled cluster theory i.e AX with new t and s---------##
   I_vv, I_oo, Ivvvv, Ioooo, Iovvo, Iovvo_2, Iovov,Iovov_2 = intermediates.initialize()
 ##-------------Linear terms of both R_ia and R_ijab--------------##
@@ -122,10 +120,6 @@ for x in range(0,n_iter):
   II_oo_new = intermediates.W1_int_So(dict_So[r])
   II_vv = intermediates.W1_int_Sv(Sv)
   II_vv_new = intermediates.W1_int_Sv(dict_Sv[r])
-  #print "II_oo_new"
-  #print II_oo_new
-  #print "II_oo"
-  #print II_oo
 ##------------------------------------------------------------##
 ##-----------------Two body diagrams--------------------------##
   Y_ijab += amplitude_response.doubles_response_quadratic(I_oo,I_vv,Ioooo,Iovvo,Iovvo_2,Iovov,dict_t2[r]) 
@@ -143,30 +137,25 @@ for x in range(0,n_iter):
   Y_ijab += -np.einsum('ickb,ka,jc->ijab',twoelecint_mo[:occ,occ:nao,:occ,occ:nao],dict_t1[r],t1)   #diagrams non-linear 3
   Y_ijab += -np.einsum('icak,jc,kb->ijab',twoelecint_mo[:occ,occ:nao,occ:nao,:occ],dict_t1[r],t1)   #diagrams non-linear 4
 
-  print "Y_ijab"
-  print Y_ijab
 ##---------------------A_lambda So and Sv sector------------##
   Y_ijab += amplitude_response.inserted_diag_So(dict_t2[r],II_oo)
   Y_ijab += amplitude_response.inserted_diag_So(t2,II_oo_new)
   Y_ijab += amplitude_response.inserted_diag_Sv(dict_t2[r],II_vv)
   Y_ijab += amplitude_response.inserted_diag_Sv(t2,II_vv_new)
   Y_ijab = cc_symmetrize.symmetrize(Y_ijab)
-
-  print "Y_ijab"
-  print Y_ijab
 ##------------------------------------------------------------##
 ##---------------------A_kappa Sv sector------------## 
   Y_iuab = amplitude_response.Sv_diagram_vs_contraction_response(dict_Sv[r])
 ##--------------------A_kappa T sector------------##
-  #Y_iuab += amplitude_response.Sv_diagram_vt_contraction_response(dict_t2[r])
-  #Y_iuab += amplitude_response.T1_contribution_Sv_response(dict_t1[r])
+  Y_iuab += amplitude_response.Sv_diagram_vt_contraction_response(dict_t2[r])
+  Y_iuab += amplitude_response.T1_contribution_Sv_response(dict_t1[r])
+  #print "Y_iuab"
+  #print Y_iuab
 ##---------------------A_kappa So sector------------## 
   Y_ijav = amplitude_response.So_diagram_vs_contraction_response(dict_So[r])
 ##----------------------A_kappa T sector------------##
-  #Y_ijav += amplitude_response.So_diagram_vt_contraction_response(dict_t2[r])
-  #Y_ijav += amplitude_response.T1_contribution_So_response(dict_t1[r])
-  #print "Y_ijav"
-  #print Y_ijav
+  Y_ijav += amplitude_response.So_diagram_vt_contraction_response(dict_t2[r])
+  Y_ijav += amplitude_response.T1_contribution_So_response(dict_t1[r])
 ##-------------------------------------------------------------------------------------------##
 ##-------Storing AX in the dictionary---------##
   
@@ -217,7 +206,11 @@ for x in range(0,n_iter):
   B_Y_iuab[r,r] = 2.0*np.einsum('iuab,iuab',dict_Sv[r],dict_Y_iuab[r])-np.einsum('iuba,iuab',dict_Sv[r],dict_Y_iuab[r])
    
   B_total = B_Y_ia+B_Y_ijab+B_Y_ijav+B_Y_iuab
-  #print B_total
+  B_total_temp = B_Y_ia+B_Y_ijab
+  print "B_total"
+  print B_total
+  print "B_total_temp"
+  print B_total_temp
 
 ##-------Diagonalization of the B matrix----------##
       
@@ -319,7 +312,9 @@ for x in range(0,n_iter):
   #  t = 2.0*np.einsum('ijav,ijav',dict_So[i],ortho_So)-np.einsum('ijav,jiav',dict_So[i],ortho_So)
   #  d = 2.0*np.einsum('iuab,iuab',dict_Sv[i],ortho_Sv)-np.einsum('iuab,iuba',dict_Sv[i],ortho_Sv)
   #  y = p+q+t+d
+  #  y = p+q
   #  print "overlap:", i,p,q,t,d,y  
+  #  print "overlap:", i,p,q,y  
  
 ##--------Normalization of the new t and s------##
 

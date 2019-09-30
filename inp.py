@@ -14,10 +14,10 @@ basis = {'H': 'sto-3g','Li':'sto-3g'},
 symmetry = True)
 
 ##------Specify linear or non-linear-------##
-calc = 'CCSD'
+calc = 'ICCSD'
 
 ##------Specify convergence criteria-------##
-conv = 8
+conv = 7
 
 ##------Specify number of iteration--------##
 n_iter = 40
@@ -27,8 +27,8 @@ diis = True
 max_diis = 7
 
 ##------Specify number of active orbitals----##
-o_act = 2
-v_act = 2
+o_act = 1
+v_act = 1
 
 ##-----specify number of frozen orbitals-------##
 nfo = 0
@@ -37,5 +37,3 @@ nfv = 0
 ##-----Specify no of steps after which linear combination has to be taken-----##
 n_davidson = 40
 
-##-----Projecting out the ground state t and s i.e coupled cluster solution---------## 
-proj_out_t0 = True
