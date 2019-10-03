@@ -251,14 +251,16 @@ for x in range(0,n_iter):
 
   lin_norm = 2.0*np.einsum('ia,ia',x_t1,x_t1)
   lin_norm += 2.0*np.einsum('ijab,ijab',x_t2,x_t2)-np.einsum('ijab,ijba',x_t2,x_t2)
+  lin_norm += 2.0*np.einsum('ijav,ijav',x_So,x_So)-np.einsum('ijav,jiav',x_So,x_So)
+  lin_norm += 2.0*np.einsum('iuab,iuab',x_Sv,x_Sv)-np.einsum('iuab,iuba',x_Sv,x_Sv)
 
-  sigma_oo = intermediates.norm_response_So(x_So)
-  Int_2_So = amplitude_response.inserted_diag_So(x_t2,sigma_oo)
-  lin_norm += 2.0*np.einsum('ujab,ujab',x_t2,Int_2_So)-np.einsum('ujab,ujba',x_t2,Int_2_So)
+# sigma_oo = intermediates.norm_response_So(x_So)
+# Int_2_So = amplitude_response.inserted_diag_So(x_t2,sigma_oo)
+# lin_norm += 2.0*np.einsum('ujab,ujab',x_t2,Int_2_So)-np.einsum('ujab,ujba',x_t2,Int_2_So)
 
-  sigma_vv = intermediates.norm_response_Sv(x_Sv)
-  Int_2_Sv = amplitude_response.inserted_diag_Sv(x_t2,sigma_vv)
-  lin_norm += 2.0*np.einsum('ijyb,ijyb',x_t2,Int_2_Sv)-np.einsum('ijyb,jiyb',x_t2,Int_2_Sv)
+# sigma_vv = intermediates.norm_response_Sv(x_Sv)
+# Int_2_Sv = amplitude_response.inserted_diag_Sv(x_t2,sigma_vv)
+# lin_norm += 2.0*np.einsum('ijyb,ijyb',x_t2,Int_2_Sv)-np.einsum('ijyb,jiyb',x_t2,Int_2_Sv)
 
   norm = math.sqrt(lin_norm)
  
@@ -328,14 +330,16 @@ for x in range(0,n_iter):
 
   ortho_norm = 2.0*np.einsum('ia,ia',ortho_t1,ortho_t1)
   ortho_norm += 2.0*np.einsum('ijab,ijab',ortho_t2,ortho_t2)-np.einsum('ijab,ijba',ortho_t2,ortho_t2)
+  ortho_norm += 2.0*np.einsum('ijav,ijav',ortho_So,ortho_So)-np.einsum('ijav,jiav',ortho_So,ortho_So)
+  ortho_norm += 2.0*np.einsum('iuab,iuab',ortho_Sv,ortho_Sv)-np.einsum('iuab,iuba',ortho_Sv,ortho_Sv)
 
-  sigma_oo = intermediates.norm_response_So(ortho_So)
-  Int_2_So = amplitude_response.inserted_diag_So(ortho_t2,sigma_oo)
-  ortho_norm += 2.0*np.einsum('ujab,ujab',ortho_t2,Int_2_So)-np.einsum('ujab,ujba',ortho_t2,Int_2_So)
+# sigma_oo = intermediates.norm_response_So(ortho_So)
+# Int_2_So = amplitude_response.inserted_diag_So(ortho_t2,sigma_oo)
+# ortho_norm += 2.0*np.einsum('ujab,ujab',ortho_t2,Int_2_So)-np.einsum('ujab,ujba',ortho_t2,Int_2_So)
 
-  sigma_vv = intermediates.norm_response_Sv(ortho_Sv)
-  Int_2_Sv = amplitude_response.inserted_diag_Sv(ortho_t2,sigma_vv)
-  ortho_norm += 2.0*np.einsum('ijyb,ijyb',ortho_t2,Int_2_Sv)-np.einsum('ijyb,jiyb',ortho_t2,Int_2_Sv)
+# sigma_vv = intermediates.norm_response_Sv(ortho_Sv)
+# Int_2_Sv = amplitude_response.inserted_diag_Sv(ortho_t2,sigma_vv)
+# ortho_norm += 2.0*np.einsum('ijyb,ijyb',ortho_t2,Int_2_Sv)-np.einsum('ijyb,jiyb',ortho_t2,Int_2_Sv)
 
   norm_total = math.sqrt(ortho_norm)
 
@@ -355,6 +359,21 @@ for x in range(0,n_iter):
   dict_So[r+1] = norm_So
   dict_Sv[r+1] = norm_Sv
 
-  nrm = 2.0*np.einsum('ia,ia',dict_t1[r+1],dict_t1[r+1]) + 2.0*np.einsum('ijab,ijab',dict_t2[r+1],dict_t2[r+1]) - np.einsum('ijab,ijba',dict_t2[r+1],dict_t2[r+1]) + 2.0*np.einsum('ijav,ijav',dict_So[r+1],dict_So[r+1]) - np.einsum('ijav,jiav',dict_So[r+1],dict_So[r+1]) + 2.0*np.einsum('iuab,iuab',dict_Sv[r+1],dict_Sv[r+1]) - np.einsum('iuab,iuba',dict_Sv[r+1],dict_Sv[r+1])
+# nrm = 2.0*np.einsum('ia,ia',norm_t1,norm_t1) 
+# nrm += 2.0*np.einsum('ijab,ijab',norm_t2,norm_t2)-np.einsum('ijab,ijba',norm_t2,norm_t2) 
+
+  nrm = 2.0*np.einsum('ia,ia',dict_t1[r+1],dict_t1[r+1]) 
+  nrm += 2.0*np.einsum('ijab,ijab',dict_t2[r+1],dict_t2[r+1]) - np.einsum('ijab,ijba',dict_t2[r+1],dict_t2[r+1]) 
+  nrm += 2.0*np.einsum('ijav,ijav',dict_So[r+1],dict_So[r+1]) - np.einsum('ijav,jiav',dict_So[r+1],dict_So[r+1]) 
+  nrm += 2.0*np.einsum('iuab,iuab',dict_Sv[r+1],dict_Sv[r+1]) - np.einsum('iuab,iuba',dict_Sv[r+1],dict_Sv[r+1])
+
+# sigma_oo = intermediates.norm_response_So(norm_So)
+# Int_3_So = amplitude_response.inserted_diag_So(norm_t2,sigma_oo)
+# nrm += 2.0*np.einsum('ujab,ujab',norm_t2,Int_3_So)-np.einsum('ujab,ujba',norm_t2,Int_3_So)
+
+# sigma_vv = intermediates.norm_response_Sv(norm_Sv)
+# Int_2_Sv = amplitude_response.inserted_diag_Sv(norm_t2,sigma_vv)
+# nrm += 2.0*np.einsum('ijyb,ijyb',norm_t2,Int_2_Sv)-np.einsum('ijyb,jiyb',norm_t2,Int_2_Sv)
+
   print "final norm:", nrm 
      
