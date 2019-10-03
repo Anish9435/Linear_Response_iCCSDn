@@ -306,6 +306,12 @@ for x in range(0,n_iter):
   ortho_So = So_2
   ortho_Sv = Sv_2
 
+  sigma_oo = intermediates.norm_response_So(ortho_So)
+  Int_2_So = amplitude_response.inserted_diag_So(ortho_t2,sigma_oo)
+
+  sigma_vv = intermediates.norm_response_Sv(ortho_Sv)
+  Int_2_Sv = amplitude_response.inserted_diag_Sv(ortho_t2,sigma_vv)
+
   for i in range(0,r+1):
     ovrlap = 2.0*np.einsum('ia,ia',t1_2,dict_t1[i]) + 2.0*np.einsum('ijab,ijab',t2_2,dict_t2[i]) - np.einsum('ijab,ijba',t2_2,dict_t2[i]) + 2.0*np.einsum('ijav,ijav',So_2,dict_So[i]) - np.einsum('ijav,jiav',So_2,dict_So[i]) + 2.0*np.einsum('iuab,iuab',Sv_2,dict_Sv[i]) - np.einsum('iuab,iuba',Sv_2,dict_Sv[i])
 
