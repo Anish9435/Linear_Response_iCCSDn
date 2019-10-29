@@ -70,7 +70,7 @@ for x in range(0,n_iter):
 ##------------Linear terms of both R_ia and R_ijab---------------------------##
 
     dict_Y_ia[r,iroot] = amplitude_response.singles_response_linear(I_oo,I_vv,dict_t1[r,iroot],dict_t2[r,iroot])
-    dict_Y_ijab[r.iroot] = amplitude_response.doubles_response_linear(I_oo,I_vv,Ivvvv,Ioooo,Iovvo,Iovvo_2,Iovov,Iovov_2,dict_t1[r,iroot],dict_t2[r,iroot])
+    dict_Y_ijab[r,iroot] = amplitude_response.doubles_response_linear(I_oo,I_vv,Ivvvv,Ioooo,Iovvo,Iovvo_2,Iovov,Iovov_2,dict_t1[r,iroot],dict_t2[r,iroot])
 ##---------------------------------------------------------------------------##  
 ##----------------update of the intermediates--------------------------------##  
     I1, I2 = intermediates.R_ia_intermediates(t1)
@@ -165,8 +165,8 @@ for x in range(0,n_iter):
     for m in range(0,r+1):
       for jroot in range(0,nroot):
         loc = m*nroot+jroot
-        dict_x_t1[r,iroot] = np.linalg.multi_dot([coeff_total[iroot][loc],dict_t1[m,jroot]])
-        dict_x_t2[r,iroot] = np.linalg.multi_dot([coeff_total[iroot][loc],dict_t2[m,iroot]])
+        dict_x_t1[r,iroot] = np.linalg.multi_dot([dict_coeff_total[iroot][loc],dict_t1[m,jroot]])
+        dict_x_t2[r,iroot] = np.linalg.multi_dot([dict_coeff_total[iroot][loc],dict_t2[m,iroot]])
 
         lin_norm = 2.0*np.einsum('ia,ia',dict_x_t1[r,iroot],dict_x_t1[r,iroot])
         lin_norm += 2.0*np.einsum('ijab,ijab',dict_x_t2[r,iroot],dict_x_t2[r,iroot])-np.einsum('ijab,ijba',dict_x_t2[r,iroot],dict_x_t2[r,iroot])
@@ -185,8 +185,8 @@ for x in range(0,n_iter):
     for m in range(0,r+1):
       for jroot in range(0,nroot):
         loc = m*nroot + jroot
-        dict_R_ia[r,iroot] = (coeff_total[iroot][loc]*dict_Y_ia[m,jroot] - w_total[ind_min_wtotal]*coeff_total[iroot][loc]*dict_t1[m,jroot])
-        dict_R_ijab[r,iroot] = (coeff_total[i]*dict_Y_ijab[i] - w_total[ind_min_wtotal]*coeff_total[i]*dict_t2[i])
+        dict_R_ia[r,iroot] = (dict_coeff_total[iroot][loc]*dict_Y_ia[m,jroot] - w_total[ind_min_wtotal]*dict_coeff_total[iroot][loc]*dict_t1[m,jroot])
+        dict_R_ijab[r,iroot] = (dict_coeff_total[iroot][loc]*dict_Y_ijab[m,jroot] - w_total[ind_min_wtotal]*dict_coeff_total[iroot][loc]*dict_t2[m,jroot])
   
   for iroot in range(0,nroot):
     eps_t = cc_update.update_t1t2(dict_R_ia[r,iroot],dict_R_ijab[r,iroot],dict_x_t1[r,iroot],dict_x_t2[r,iroot])[0]
@@ -194,8 +194,8 @@ for x in range(0,n_iter):
     print 'EPS: ', eps_t(iroot) 
     print 'Eigen value: ', w_total[ind_min_wtotal(iroot)]
     if (eps_t(iroot) <= conv):
-    print "CONVERGED!!!!!!!!!!!!"
-    print 'Excitation Energy: ', w_total[ind_min_wtotal(iroot)]
+      print "CONVERGED!!!!!!!!!!!!"
+      print 'Excitation Energy: ', w_total[ind_min_wtotal(iroot)]
     break
 
 ##--------Divide residue by denominator to get X--------##
@@ -213,11 +213,6 @@ for x in range(0,n_iter):
     ortho_t1 += - ovrlap*dict_t1[i]  
     ortho_t2 += - ovrlap*dict_t2[i]  
   
-  #for i in range(0,r+1):
-  #  p = 2.0*np.einsum('ia,ia',dict_t1[i],ortho_t1)
-  #  q = 2.0*np.einsum('ijab,ijab',dict_t2[i],ortho_t2)-np.einsum('ijab,ijba',dict_t2[i],ortho_t2)
-  #  y = p+q
-  #  print "overlap:", i,p,q,y  
 
 ##--------Normalization of the new t and s------##
 
@@ -241,3 +236,8 @@ for x in range(0,n_iter):
   print "final norm:", nrm 
 
      
+  #for i in range(0,r+1):
+  #  p = 2.0*np.einsum('ia,ia',dict_t1[i],ortho_t1)
+  #  q = 2.0*np.einsum('ijab,ijab',dict_t2[i],ortho_t2)-np.einsum('ijab,ijba',dict_t2[i],ortho_t2)
+  #  y = p+q
+  #  print "overlap:", i,p,q,y  
