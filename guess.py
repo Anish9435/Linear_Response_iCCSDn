@@ -1,3 +1,4 @@
+
 import numpy as np
 import test
 import inp
@@ -5,7 +6,7 @@ import math
 import MP2
 import trans_mo
 
-nroot = inp.nroot
+nroot = 2
 
 # This function finds out the orbital indices of the lowest excitation
 def find_orb_indcs(Tmat):
@@ -42,14 +43,13 @@ def guess_X(occ,virt,o_act,v_act):
   dict_t1 ={}
   dict_t2 ={}
   for iroot in range(0,nroot):
-
-    t1_guess = np.zeros((occ,virt))
-    t2_guess = np.zeros((occ,occ,virt,virt))
-
     if(iroot==0):
       t1_tmp=koopmann_spectrum(occ,virt,o_act,v_act)
 
     io,iv = find_orb_indcs(t1_tmp)
+
+    t1_guess = np.zeros((occ,virt))
+    t2_guess = np.zeros((occ,occ,virt,virt))
 
     t1_guess[io,iv] = 1.0/math.sqrt(2.0)  
 

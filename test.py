@@ -42,4 +42,3 @@ A2 = np.einsum('ia,ia',t1,R_ia)
 #print A2
 
 #B=np.linalg.multi_dot([np.transpose(t2),R_ijab])
-
