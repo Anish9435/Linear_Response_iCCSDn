@@ -28,6 +28,7 @@ D1 = -1.0*MP2.D1
 D2 = -1.0*MP2.D2
 dict_t1,dict_t2 = davidson.guess_X(occ,virt,o_act,v_act)
 twoelecint_mo = MP2.twoelecint_mo 
+count = [0]*nroot
 
 ##-----------Initialization of Dictionaries for storing the values----------##
 
@@ -57,11 +58,11 @@ for x in range(0,n_iter):
         dict_t1.clear()
         dict_t2.clear()
       
-        B_Y_ia = np.zeros((r+1,r+1))
-        B_Y_ijab = np.zeros((r+1,r+1))
+        B_Y_ia = np.zeros((nroot*(r+1),nroot*(r+1)))
+        B_Y_ijab = np.zeros((nroot*(r+1),nroot*(r+1)))
       
-        dict_t1[r] = x_t1  
-        dict_t2[r] = x_t2
+        dict_t1[r,iroot] = dict_x_t1[r,iroot]  
+        dict_t2[r,iroot] = dict_x_t1[r,iroot]  
   
 ##---------------------------------Diagrams and intermediates of CCSD-----------------------------------------------##
   
@@ -118,8 +119,8 @@ for x in range(0,n_iter):
   B_Y_ia_nth = np.zeros((nroot*(r+1),nroot*(r+1)))
   B_Y_ijab_nth = np.zeros((nroot*(r+1),nroot*(r+1)))
   
-  B_Y_ia_nth[:nroot*(r+1),:nroot*(r+1)] = B_Y_ia 
-  B_Y_ijab_nth[:nroot*(r+1),:nroot*(r+1)] = B_Y_ijab
+  B_Y_ia_nth[:(nroot*r),:(nroot*r)] = B_Y_ia 
+  B_Y_ijab_nth[:(nroot*r),:(nroot*r)] = B_Y_ijab
   
   B_Y_ia = cp.deepcopy(B_Y_ia_nth)
   B_Y_ijab = cp.deepcopy(B_Y_ijab_nth)
@@ -132,12 +133,12 @@ for x in range(0,n_iter):
       for jroot in range(0,nroot):
         loc1 = r*nroot+iroot
         loc2 = m*nroot+jroot
-        B_Y_ia[loc1,loc2] = 2.0*np.einsum('ia,ia',dict_t1[m,iroot],dict_Y_ia[r,iroot])
-        B_Y_ijab[loc1,loc2] = 2.0*np.einsum('ijab,ijab',dict_t2[m,iroot],dict_Y_ijab[r,iroot])-np.einsum('ijba,ijab',dict_t2[m,iroot],dict_Y_ijab[r,iroot])
+        B_Y_ia[loc2,loc1] = 2.0*np.einsum('ia,ia',dict_t1[m,iroot],dict_Y_ia[r,iroot])
+        B_Y_ijab[loc2,loc1] = 2.0*np.einsum('ijab,ijab',dict_t2[m,iroot],dict_Y_ijab[r,iroot])-np.einsum('ijba,ijab',dict_t2[m,iroot],dict_Y_ijab[r,iroot])
 
         if (r!=m):
-          B_Y_ia[loc2,loc1] = 2.0*np.einsum('ia,ia',dict_t1[r,iroot],dict_Y_ia[m,iroot])
-          B_Y_ijab[loc2,loc1] = 2.0*np.einsum('ijab,ijab',dict_t2[r,iroot],dict_Y_ijab[m,iroot])-np.einsum('ijba,ijab',dict_t2[r,iroot],dict_Y_ijab[m,iroot])
+          B_Y_ia[loc1,loc2] = 2.0*np.einsum('ia,ia',dict_t1[r,iroot],dict_Y_ia[m,iroot])
+          B_Y_ijab[loc1,loc2] = 2.0*np.einsum('ijab,ijab',dict_t2[r,iroot],dict_Y_ijab[m,iroot])-np.einsum('ijba,ijab',dict_t2[r,iroot],dict_Y_ijab[m,iroot])
            
   B_total = B_Y_ia+B_Y_ijab
 
@@ -151,9 +152,11 @@ for x in range(0,n_iter):
 ##-----Assigning the position of the lowest eigenvalue----##
 
   dict_coeff_total = {}
+  w = []
   for iroot in range(0,nroot):
     ind_min_wtotal = np.argmin(w_total)
     dict_coeff_total[iroot] = vects_total[:,ind_min_wtotal]
+    w.append(w_total[ind_min_wtotal])
     w_total[ind_min_wtotal] = 123.456
 
 ##-----------------Linear Combination--------------##
@@ -175,7 +178,7 @@ for x in range(0,n_iter):
     if (norm > 1e-9):
       dict_x_t1[r,iroot] = dict_x_t1[r,iroot]/norm
       dict_x_t2[r,iroot] = dict_x_t2[r,iroot]/norm
-
+  
 ##------Formation of residual matrix--------##
   
   dict_R_ia = {}
@@ -185,55 +188,74 @@ for x in range(0,n_iter):
     for m in range(0,r+1):
       for jroot in range(0,nroot):
         loc = m*nroot + jroot
-        dict_R_ia[r,iroot] = (dict_coeff_total[iroot][loc]*dict_Y_ia[m,jroot] - w_total[ind_min_wtotal]*dict_coeff_total[iroot][loc]*dict_t1[m,jroot])
-        dict_R_ijab[r,iroot] = (dict_coeff_total[iroot][loc]*dict_Y_ijab[m,jroot] - w_total[ind_min_wtotal]*dict_coeff_total[iroot][loc]*dict_t2[m,jroot])
+        dict_R_ia[r,iroot] = (dict_coeff_total[iroot][loc]*dict_Y_ia[m,jroot] - w[iroot]*dict_coeff_total[iroot][loc]*dict_t1[m,jroot])
+        dict_R_ijab[r,iroot] = (dict_coeff_total[iroot][loc]*dict_Y_ijab[m,jroot] - w[iroot]*dict_coeff_total[iroot][loc]*dict_t2[m,jroot])
   
+  eps_t = [] 
   for iroot in range(0,nroot):
-    eps_t = cc_update.update_t1t2(dict_R_ia[r,iroot],dict_R_ijab[r,iroot],dict_x_t1[r,iroot],dict_x_t2[r,iroot])[0]
+    eps_t.append(cc_update.update_t1t2(dict_R_ia[r,iroot],dict_R_ijab[r,iroot],dict_x_t1[r,iroot],dict_x_t2[r,iroot])[0])
   
-    print 'EPS: ', eps_t(iroot) 
-    print 'Eigen value: ', w_total[ind_min_wtotal(iroot)]
-    if (eps_t(iroot) <= conv):
-      print "CONVERGED!!!!!!!!!!!!"
-      print 'Excitation Energy: ', w_total[ind_min_wtotal(iroot)]
+    print 'EPS: ', eps_t[iroot] 
+    print 'Eigen value: ', w[iroot]
+    if (eps_t[iroot] <= conv):
+      count[iroot] = 1
+  if (sum(count)== nroot):
+    print "CONVERGED!!!!!!!!!!!!"
+    print 'Excitation Energy: ', w[iroot]
     break
 
 ##--------Divide residue by denominator to get X--------##
 
-  t1_2 = davidson.get_XO(R_ia,D1,w_total[ind_min_wtotal])
-  t2_2 = davidson.get_XO(R_ijab,D2,w_total[ind_min_wtotal])
+  dict_t1_2 = {}
+  dict_t2_2 = {}
+
+  for iroot in range(0,nroot):
+    dict_t1_2[iroot] = davidson.get_XO(dict_R_ia[r,iroot],D1,w[iroot])
+    dict_t2_2[iroot] = davidson.get_XO(dict_R_ijab[r,iroot],D2,w[iroot])
 
 ##------Schmidt orthogonalization----------##
+ 
+  dict_ortho_t1 = {} 
+  dict_ortho_t2 = {} 
+
+  dict_norm_t1 = {} 
+  dict_norm_t2 = {} 
+
+  for iroot in range(0,nroot):
+    dict_ortho_t1[iroot] = dict_t1_2[iroot]
+    dict_ortho_t2[iroot] = dict_t2_2[iroot]
   
-  ortho_t1 = t1_2
-  ortho_t2 = t2_2
+    for m in range(0,r+1):
+      ovrlap = 2.0*np.einsum('ia,ia',dict_t1_2[iroot],dict_t1[m,iroot]) + 2.0*np.einsum('ijab,ijab',dict_t2_2[iroot],dict_t2[m,iroot]) - np.einsum('ijab,ijba',dict_t2_2[iroot],dict_t2[m,iroot])
+      dict_ortho_t1[iroot] += - ovrlap*dict_t1[m,iroot]  
+      dict_ortho_t2[iroot] += - ovrlap*dict_t2[m,iroot]  
   
-  for i in range(0,r+1):
-    ovrlap = 2.0*np.einsum('ia,ia',t1_2,dict_t1[i]) + 2.0*np.einsum('ijab,ijab',t2_2,dict_t2[i]) - np.einsum('ijab,ijba',t2_2,dict_t2[i])
-    ortho_t1 += - ovrlap*dict_t1[i]  
-    ortho_t2 += - ovrlap*dict_t2[i]  
-  
+      for jroot in range(0,iroot):
+        overlap = 2.0*np.einsum('ia,ia',dict_norm_t1[jroot],dict_t1_2[iroot]) + 2.0*np.einsum('ijab,ijab',dict_norm_t2[jroot],dict_t2_2[iroot]) - np.einsum('ijab,ijba',dict_norm_t2[jroot],dict_t2_2[iroot])
+        dict_ortho_t1[iroot] += -overlap*dict_norm_t1[jroot]
+        dict_ortho_t2[iroot] += -overlap*dict_norm_t2[jroot]
+         
 
 ##--------Normalization of the new t and s------##
 
-  ortho_norm = 2.0*np.einsum('ia,ia',ortho_t1,ortho_t1)
-  ortho_norm += 2.0*np.einsum('ijab,ijab',ortho_t2,ortho_t2)-np.einsum('ijab,ijba',ortho_t2,ortho_t2)
-  norm_total = math.sqrt(ortho_norm)
+    ortho_norm = 2.0*np.einsum('ia,ia',dict_ortho_t1[iroot],dict_ortho_t1[iroot])
+    ortho_norm += 2.0*np.einsum('ijab,ijab',dict_ortho_t2[iroot],dict_ortho_t2[iroot])-np.einsum('ijab,ijba',dict_ortho_t2[iroot],dict_ortho_t2[iroot])
+    norm_total = math.sqrt(ortho_norm)
 
   # Each part of the vector is divided by the total norm of the vector
-  if (norm_total > 1e-9):
-    norm_t1 = ortho_t1/norm_total
-    norm_t2 = ortho_t2/norm_total
-  else:  
-    print 'Error in calculation: Generating vector with zero norm'
-    quit()
+    if (norm_total > 1e-9):
+      dict_norm_t1[iroot] = dict_ortho_t1[iroot]/norm_total
+      dict_norm_t2[iroot] = dict_ortho_t2[iroot]/norm_total
+    else:  
+      print 'Error in calculation: Generating vector with zero norm'
+      quit()
   
 ##-------updating value of X for the next iteration-------##
 
-  dict_t1[r+1] = norm_t1
-  dict_t2[r+1] = norm_t2
-  nrm = 2.0*np.einsum('ia,ia',dict_t1[r+1],dict_t1[r+1]) + 2.0*np.einsum('ijab,ijab',dict_t2[r+1],dict_t2[r+1]) - np.einsum('ijab,ijba',dict_t2[r+1],dict_t2[r+1])
-  print "final norm:", nrm 
+    dict_t1[r+1,iroot] = dict_norm_t1[iroot]
+    dict_t2[r+1,iroot] = dict_norm_t2[iroot]
+    nrm = 2.0*np.einsum('ia,ia',dict_t1[r+1,iroot],dict_t1[r+1,iroot]) + 2.0*np.einsum('ijab,ijab',dict_t2[r+1,iroot],dict_t2[r+1,iroot]) - np.einsum('ijab,ijba',dict_t2[r+1,iroot],dict_t2[r+1,iroot])
+    print "final norm:", iroot, nrm
 
      
   #for i in range(0,r+1):
