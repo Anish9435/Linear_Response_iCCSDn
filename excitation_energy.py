@@ -20,7 +20,7 @@ virt = MP2.virt
 nao = MP2.nao
 o_act = inp.o_act
 v_act = inp.v_act
-n_iter = inp.n_iter
+lrt_iter = inp.lrt_iter
 n_davidson = inp.n_davidson
 nroot = inp.nroot 
 conv = 10**(-inp.conv)
@@ -41,7 +41,7 @@ B_Y_ia = np.zeros((nroot,nroot))
 B_Y_ijab = np.zeros((nroot,nroot))
 
 ##------Start iteration--------##
-for x in range(0,n_iter):
+for x in range(0,lrt_iter):
 
 ##-----conditioning with the remainder------##
 
@@ -118,13 +118,13 @@ for x in range(0,n_iter):
 
   B_Y_ia_nth = np.zeros((nroot*(r+1),nroot*(r+1)))
   B_Y_ijab_nth = np.zeros((nroot*(r+1),nroot*(r+1)))
-  
-  B_Y_ia_nth[:(nroot*r),:(nroot*r)] = B_Y_ia 
-  B_Y_ijab_nth[:(nroot*r),:(nroot*r)] = B_Y_ijab
+
+  B_Y_ia_nth[:nroot*r,:nroot*r] = B_Y_ia 
+  B_Y_ijab_nth[:nroot*r,:nroot*r] = B_Y_ijab
   
   B_Y_ia = cp.deepcopy(B_Y_ia_nth)
   B_Y_ijab = cp.deepcopy(B_Y_ijab_nth)
-  
+    
   B_Y_ia_nth = None
   B_Y_ijab_nth = None
 
@@ -141,6 +141,7 @@ for x in range(0,n_iter):
           B_Y_ijab[loc1,loc2] = 2.0*np.einsum('ijab,ijab',dict_t2[r,iroot],dict_Y_ijab[m,iroot])-np.einsum('ijba,ijab',dict_t2[r,iroot],dict_Y_ijab[m,iroot])
            
   B_total = B_Y_ia+B_Y_ijab
+  #print B_total
 
 ##-------Diagonalization of the B matrix----------##
       
@@ -148,7 +149,7 @@ for x in range(0,n_iter):
   
   if (np.all(w_total).imag <= 1e-8):
     w_total = w_total.real    
-
+  #print vects_total
 ##-----Assigning the position of the lowest eigenvalue----##
 
   dict_coeff_total = {}
@@ -165,11 +166,13 @@ for x in range(0,n_iter):
   dict_x_t2 = {}
 
   for iroot in range(0,nroot):
+    dict_x_t1[r,iroot] = np.zeros((occ,virt))
+    dict_x_t2[r,iroot] = np.zeros((occ,occ,virt,virt))
     for m in range(0,r+1):
       for jroot in range(0,nroot):
         loc = m*nroot+jroot
-        dict_x_t1[r,iroot] = np.linalg.multi_dot([dict_coeff_total[iroot][loc],dict_t1[m,jroot]])
-        dict_x_t2[r,iroot] = np.linalg.multi_dot([dict_coeff_total[iroot][loc],dict_t2[m,iroot]])
+        dict_x_t1[r,iroot] += np.linalg.multi_dot([dict_coeff_total[iroot][loc],dict_t1[m,jroot]])
+        dict_x_t2[r,iroot] += np.linalg.multi_dot([dict_coeff_total[iroot][loc],dict_t2[m,iroot]])
 
         lin_norm = 2.0*np.einsum('ia,ia',dict_x_t1[r,iroot],dict_x_t1[r,iroot])
         lin_norm += 2.0*np.einsum('ijab,ijab',dict_x_t2[r,iroot],dict_x_t2[r,iroot])-np.einsum('ijab,ijba',dict_x_t2[r,iroot],dict_x_t2[r,iroot])
@@ -178,18 +181,21 @@ for x in range(0,n_iter):
     if (norm > 1e-9):
       dict_x_t1[r,iroot] = dict_x_t1[r,iroot]/norm
       dict_x_t2[r,iroot] = dict_x_t2[r,iroot]/norm
-  
+    #print dict_x_t1
+ 
 ##------Formation of residual matrix--------##
   
   dict_R_ia = {}
   dict_R_ijab = {}
   
   for iroot in range(0,nroot):
+    dict_R_ia[r,iroot] = np.zeros((occ,virt))
+    dict_R_ijab[r,iroot] = np.zeros((occ,occ,virt,virt))
     for m in range(0,r+1):
       for jroot in range(0,nroot):
         loc = m*nroot + jroot
-        dict_R_ia[r,iroot] = (dict_coeff_total[iroot][loc]*dict_Y_ia[m,jroot] - w[iroot]*dict_coeff_total[iroot][loc]*dict_t1[m,jroot])
-        dict_R_ijab[r,iroot] = (dict_coeff_total[iroot][loc]*dict_Y_ijab[m,jroot] - w[iroot]*dict_coeff_total[iroot][loc]*dict_t2[m,jroot])
+        dict_R_ia[r,iroot] += (dict_coeff_total[iroot][loc]*dict_Y_ia[m,jroot] - w[iroot]*dict_coeff_total[iroot][loc]*dict_t1[m,jroot])
+        dict_R_ijab[r,iroot] += (dict_coeff_total[iroot][loc]*dict_Y_ijab[m,jroot] - w[iroot]*dict_coeff_total[iroot][loc]*dict_t2[m,jroot])
   
   eps_t = [] 
   for iroot in range(0,nroot):
@@ -234,7 +240,7 @@ for x in range(0,n_iter):
         overlap = 2.0*np.einsum('ia,ia',dict_norm_t1[jroot],dict_t1_2[iroot]) + 2.0*np.einsum('ijab,ijab',dict_norm_t2[jroot],dict_t2_2[iroot]) - np.einsum('ijab,ijba',dict_norm_t2[jroot],dict_t2_2[iroot])
         dict_ortho_t1[iroot] += -overlap*dict_norm_t1[jroot]
         dict_ortho_t2[iroot] += -overlap*dict_norm_t2[jroot]
-         
+    #print dict_ortho_t1 
 
 ##--------Normalization of the new t and s------##
 
@@ -256,10 +262,11 @@ for x in range(0,n_iter):
     dict_t2[r+1,iroot] = dict_norm_t2[iroot]
     nrm = 2.0*np.einsum('ia,ia',dict_t1[r+1,iroot],dict_t1[r+1,iroot]) + 2.0*np.einsum('ijab,ijab',dict_t2[r+1,iroot],dict_t2[r+1,iroot]) - np.einsum('ijab,ijba',dict_t2[r+1,iroot],dict_t2[r+1,iroot])
     print "final norm:", iroot, nrm
+    #print dict_t1[r+1,iroot]
 
-     
-  #for i in range(0,r+1):
-  #  p = 2.0*np.einsum('ia,ia',dict_t1[i],ortho_t1)
-  #  q = 2.0*np.einsum('ijab,ijab',dict_t2[i],ortho_t2)-np.einsum('ijab,ijba',dict_t2[i],ortho_t2)
-  #  y = p+q
-  #  print "overlap:", i,p,q,y  
+  #for iroot in range(0,nroot):
+  #  for m in range(0,r+1):
+  #    p = 2.0*np.einsum('ia,ia',dict_t1[m,iroot],dict_ortho_t1[iroot])
+  #    q = 2.0*np.einsum('ijab,ijab',dict_t2[m,iroot],dict_ortho_t2[iroot])-np.einsum('ijab,ijba',dict_t2[m,iroot],dict_ortho_t2[iroot])
+  #    y = p+q
+  #    print "overlap:", iroot,p,q,y  
