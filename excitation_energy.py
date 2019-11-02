@@ -119,8 +119,12 @@ for x in range(0,lrt_iter):
   B_Y_ia_nth = np.zeros((nroot*(r+1),nroot*(r+1)))
   B_Y_ijab_nth = np.zeros((nroot*(r+1),nroot*(r+1)))
 
-  B_Y_ia_nth[:nroot*r,:nroot*r] = B_Y_ia 
-  B_Y_ijab_nth[:nroot*r,:nroot*r] = B_Y_ijab
+  if (r==0):
+    B_Y_ia_nth[:nroot,:nroot] = B_Y_ia
+    B_Y_ijab_nth[:nroot,:nroot] = B_Y_ijab
+  else:
+    B_Y_ia_nth[:nroot*r,:nroot*r] = B_Y_ia 
+    B_Y_ijab_nth[:nroot*r,:nroot*r] = B_Y_ijab 
   
   B_Y_ia = cp.deepcopy(B_Y_ia_nth)
   B_Y_ijab = cp.deepcopy(B_Y_ijab_nth)
@@ -133,13 +137,12 @@ for x in range(0,lrt_iter):
       for jroot in range(0,nroot):
         loc1 = r*nroot+iroot
         loc2 = m*nroot+jroot
-        B_Y_ia[loc2,loc1] = 2.0*np.einsum('ia,ia',dict_t1[m,iroot],dict_Y_ia[r,iroot])
-        B_Y_ijab[loc2,loc1] = 2.0*np.einsum('ijab,ijab',dict_t2[m,iroot],dict_Y_ijab[r,iroot])-np.einsum('ijba,ijab',dict_t2[m,iroot],dict_Y_ijab[r,iroot])
+        B_Y_ia[loc2,loc1] = 2.0*np.einsum('ia,ia',dict_t1[m,iroot],dict_Y_ia[r,jroot])
+        B_Y_ijab[loc2,loc1] = 2.0*np.einsum('ijab,ijab',dict_t2[m,iroot],dict_Y_ijab[r,jroot])-np.einsum('ijba,ijab',dict_t2[m,iroot],dict_Y_ijab[r,jroot])
 
         if (r!=m):
-          B_Y_ia[loc1,loc2] = 2.0*np.einsum('ia,ia',dict_t1[r,iroot],dict_Y_ia[m,iroot])
-          B_Y_ijab[loc1,loc2] = 2.0*np.einsum('ijab,ijab',dict_t2[r,iroot],dict_Y_ijab[m,iroot])-np.einsum('ijba,ijab',dict_t2[r,iroot],dict_Y_ijab[m,iroot])
-           
+          B_Y_ia[loc1,loc2] = 2.0*np.einsum('ia,ia',dict_t1[r,jroot],dict_Y_ia[m,iroot])
+          B_Y_ijab[loc1,loc2] = 2.0*np.einsum('ijab,ijab',dict_t2[r,jroot],dict_Y_ijab[m,iroot])-np.einsum('ijba,ijab',dict_t2[r,jroot],dict_Y_ijab[m,iroot])
   B_total = B_Y_ia+B_Y_ijab
   #print B_total
 
@@ -162,8 +165,8 @@ for x in range(0,lrt_iter):
 
 ##-----------------Linear Combination--------------##
 
-  dict_x_t1 = {}
-  dict_x_t2 = {}
+  dict_x_t1  = {}
+  dict_x_t2  = {}
 
   for iroot in range(0,nroot):
     dict_x_t1[r,iroot] = np.zeros((occ,virt))
@@ -172,7 +175,7 @@ for x in range(0,lrt_iter):
       for jroot in range(0,nroot):
         loc = m*nroot+jroot
         dict_x_t1[r,iroot] += np.linalg.multi_dot([dict_coeff_total[iroot][loc],dict_t1[m,jroot]])
-        dict_x_t2[r,iroot] += np.linalg.multi_dot([dict_coeff_total[iroot][loc],dict_t2[m,iroot]])
+        dict_x_t2[r,iroot] += np.linalg.multi_dot([dict_coeff_total[iroot][loc],dict_t2[m,jroot]])
 
         lin_norm = 2.0*np.einsum('ia,ia',dict_x_t1[r,iroot],dict_x_t1[r,iroot])
         lin_norm += 2.0*np.einsum('ijab,ijab',dict_x_t2[r,iroot],dict_x_t2[r,iroot])-np.einsum('ijab,ijba',dict_x_t2[r,iroot],dict_x_t2[r,iroot])
