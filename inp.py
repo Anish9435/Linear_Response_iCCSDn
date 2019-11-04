@@ -25,6 +25,9 @@ conv = 8
 ##------Specify number of iteration--------##
 n_iter = 40
 
+##------Specify number of iteration for LRT--------##
+lrt_iter = 30
+
 ##------Specify DIIS-------------##
 diis = True
 max_diis = 7
@@ -40,8 +43,10 @@ nfv = 0
 ##-----Specify no of steps after which linear combination has to be taken-----##
 n_davidson = 40
 
-##-----Projecting out the ground state t and s i.e coupled cluster solution---------## 
-proj_out_t0 = True
-
-##------Number of roots required-------------##
+##---------Number of roots required---------------##
 nroot = 2
+
+'''
+[['Li',(  0.000000,  0.000000, -0.3797714041)],
+ ['H',(  0.000000,  0.000000,  2.6437904102)]],
+'''

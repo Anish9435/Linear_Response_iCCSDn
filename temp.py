@@ -1,16 +1,11 @@
 import numpy as np
-'''
-nroot = 2
-#x_t1 = np.ones((5,5))
-dict_x_t1 ={}
+import copy as cp
 
-for r in range (0,2):
-  for iroot in range(0,nroot):
-    dict_x_t1[r,iroot] = np.zeros((5,5))
-    dict_x_t1[r,iroot] += np.ones((5,5))  
-    print r, iroot, dict_x_t1[r,iroot]
-'''
-b = np.arange(6) + 10
-print b
-index = np.sort(b)
-print index[-1]
+nroot = 2
+B = np.zeros((nroot,nroot))
+
+for r in range(0,5):
+  B_n = np.ones((nroot*(r+1),nroot*(r+1)))
+  B_n[:nroot*r,:nroot*r] = B 
+  B = cp.deepcopy(B_n)
+  print B

@@ -30,6 +30,7 @@ dict_t1,dict_t2 = davidson.guess_X(occ,virt,o_act,v_act)
 twoelecint_mo = MP2.twoelecint_mo 
 count = [0]*nroot
 
+
 ##-----------Initialization of Dictionaries for storing the values----------##
 
 dict_Y_ia = {}
@@ -45,10 +46,15 @@ for x in range(0,lrt_iter):
 
 ##-----conditioning with the remainder------##
 
-  print ("*********")
-  print ("iteration number "+str(x))
+  print ("")
+  print ("")
+  print ("")
+  print ("")
+  print ("-------------------------------------------------")
+  print ("          Iteration number "+str(x))
   r = x%n_davidson
-  print ("Subspace vector "+str(r))
+  print ("          Subspace vector "+str(r))
+  print ("-------------------------------------------------")
   for iroot in range(0,nroot):
     if(x>0):
       if r==0:
@@ -63,7 +69,8 @@ for x in range(0,lrt_iter):
       
         dict_t1[r,iroot] = dict_x_t1[r,iroot]  
         dict_t2[r,iroot] = dict_x_t1[r,iroot]  
-  
+
+
 ##---------------------------------Diagrams and intermediates of CCSD-----------------------------------------------##
   
     I_vv, I_oo, Ivvvv, Ioooo, Iovvo, Iovvo_2, Iovov,Iovov_2 = intermediates.initialize()
@@ -177,8 +184,8 @@ for x in range(0,lrt_iter):
         dict_x_t1[r,iroot] += np.linalg.multi_dot([dict_coeff_total[iroot][loc],dict_t1[m,jroot]])
         dict_x_t2[r,iroot] += np.linalg.multi_dot([dict_coeff_total[iroot][loc],dict_t2[m,jroot]])
 
-        lin_norm = 2.0*np.einsum('ia,ia',dict_x_t1[r,iroot],dict_x_t1[r,iroot])
-        lin_norm += 2.0*np.einsum('ijab,ijab',dict_x_t2[r,iroot],dict_x_t2[r,iroot])-np.einsum('ijab,ijba',dict_x_t2[r,iroot],dict_x_t2[r,iroot])
+    lin_norm = 2.0*np.einsum('ia,ia',dict_x_t1[r,iroot],dict_x_t1[r,iroot])
+    lin_norm += 2.0*np.einsum('ijab,ijab',dict_x_t2[r,iroot],dict_x_t2[r,iroot])-np.einsum('ijab,ijba',dict_x_t2[r,iroot],dict_x_t2[r,iroot])
     norm = math.sqrt(lin_norm)
  
     if (norm > 1e-9):
@@ -204,12 +211,14 @@ for x in range(0,lrt_iter):
   for iroot in range(0,nroot):
     eps_t.append(cc_update.update_t1t2(dict_R_ia[r,iroot],dict_R_ijab[r,iroot],dict_x_t1[r,iroot],dict_x_t2[r,iroot])[0])
   
-    print 'EPS: ', eps_t[iroot] 
-    print 'Eigen value: ', w[iroot]
+    print ("             ------------------------")
+    print 'EPS for IROOT :',iroot, '  IS: ', eps_t[iroot] 
+    print 'Eigenvalue for IROOT :',iroot, '  IS:  ', w[iroot]
+    print ("             ------------------------")
     if (eps_t[iroot] <= conv):
       count[iroot] = 1
   if (sum(count)== nroot):
-    print "CONVERGED!!!!!!!!!!!!"
+    print "!!!!!!!!!!CONVERGED!!!!!!!!!!!!"
     print 'Excitation Energy: ', w[iroot]
     break
 
@@ -264,7 +273,7 @@ for x in range(0,lrt_iter):
     dict_t1[r+1,iroot] = dict_norm_t1[iroot]
     dict_t2[r+1,iroot] = dict_norm_t2[iroot]
     nrm = 2.0*np.einsum('ia,ia',dict_t1[r+1,iroot],dict_t1[r+1,iroot]) + 2.0*np.einsum('ijab,ijab',dict_t2[r+1,iroot],dict_t2[r+1,iroot]) - np.einsum('ijab,ijba',dict_t2[r+1,iroot],dict_t2[r+1,iroot])
-    print "final norm:", iroot, nrm
+    #print "final norm:", iroot, nrm
     #print dict_t1[r+1,iroot]
 
   #for iroot in range(0,nroot):

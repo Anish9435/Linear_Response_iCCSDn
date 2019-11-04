@@ -39,8 +39,8 @@ def koopmann_spectrum(occ,virt,o_act,v_act):
 def guess_X(occ,virt,o_act,v_act):
 
 
-  dict_t1 ={}
-  dict_t2 ={}
+  dict_t1_nonortho_guess ={}
+  dict_t2_nonortho_guess ={}
   for iroot in range(0,nroot):
 
     t1_guess = np.zeros((occ,virt))
@@ -53,12 +53,34 @@ def guess_X(occ,virt,o_act,v_act):
 
     t1_guess[io,iv] = 1.0/math.sqrt(2.0)  
 
-    dict_t1[0,iroot]=t1_guess
-    dict_t2[0,iroot]=t2_guess
+    dict_t1_nonortho_guess[0,iroot]=t1_guess
+    dict_t2_nonortho_guess[0,iroot]=t2_guess
 
     t1_tmp[io,iv]=123.456
 
+  dict_t1,dict_t2 = orthogonalize_guess(dict_t1_nonortho_guess,dict_t2_nonortho_guess)
+
   return dict_t1,dict_t2
 
+def orthogonalize_guess(dict_t1_nonortho_guess,dict_t2_nonortho_guess):
+
+  dict_t1_ortho_guess = {}
+  dict_t2_ortho_guess = {}
+
+  for iroot in range(0,nroot):
+    dict_t1_ortho_guess[0,iroot] = dict_t1_nonortho_guess[0,iroot]
+    dict_t2_ortho_guess[0,iroot] = dict_t2_nonortho_guess[0,iroot]
+
+    for jroot in range(0,iroot):
+      ovrlp = 2.0*np.einsum('ia,ia', dict_t1_nonortho_guess[0,iroot],dict_t1_nonortho_guess[0,jroot]) + 2.0*np.einsum('ijab,ijab',dict_t2_ortho_guess[0,iroot],dict_t2_ortho_guess[0,jroot]) - np.einsum('ijab,ijba',dict_t2_ortho_guess[0,iroot],dict_t2_ortho_guess[0,jroot])
+      dict_t1_ortho_guess[0,iroot] += -ovrlp*dict_t1_nonortho_guess[0,jroot]
+      dict_t2_ortho_guess[0,iroot] += -ovrlp*dict_t2_nonortho_guess[0,jroot]
+
+
+  return dict_t1_ortho_guess,dict_t2_ortho_guess
+
+def get_XO(R,D,Omega):
+  X = np.divide(R,(D-Omega))
+  return X
     
     
