@@ -29,7 +29,7 @@ D2 = -1.0*MP2.D2
 dict_t1,dict_t2 = davidson.guess_X(occ,virt,o_act,v_act)
 twoelecint_mo = MP2.twoelecint_mo 
 count = [0]*nroot
-
+print dict_t1
 
 ##-----------Initialization of Dictionaries for storing the values----------##
 
@@ -139,19 +139,26 @@ for x in range(0,lrt_iter):
   B_Y_ia_nth = None
   B_Y_ijab_nth = None
 
-  for m in range(0,r+1):
+  for m in range(0,r):
     for iroot in range(0,nroot):
       for jroot in range(0,nroot):
         loc1 = r*nroot+iroot
         loc2 = m*nroot+jroot
-        B_Y_ia[loc2,loc1] = 2.0*np.einsum('ia,ia',dict_t1[m,iroot],dict_Y_ia[r,jroot])
-        B_Y_ijab[loc2,loc1] = 2.0*np.einsum('ijab,ijab',dict_t2[m,iroot],dict_Y_ijab[r,jroot])-np.einsum('ijba,ijab',dict_t2[m,iroot],dict_Y_ijab[r,jroot])
+        B_Y_ia[loc1,loc2] = 2.0*np.einsum('ia,ia',dict_t1[r,iroot],dict_Y_ia[m,jroot])
+        B_Y_ia[loc2,loc1] = 2.0*np.einsum('ia,ia',dict_t1[m,jroot],dict_Y_ia[r,iroot])
 
-        if (r!=m):
-          B_Y_ia[loc1,loc2] = 2.0*np.einsum('ia,ia',dict_t1[r,jroot],dict_Y_ia[m,iroot])
-          B_Y_ijab[loc1,loc2] = 2.0*np.einsum('ijab,ijab',dict_t2[r,jroot],dict_Y_ijab[m,iroot])-np.einsum('ijba,ijab',dict_t2[r,jroot],dict_Y_ijab[m,iroot])
+        B_Y_ijab[loc1,loc2] = 2.0*np.einsum('ijab,ijab',dict_t2[r,iroot],dict_Y_ijab[m,jroot])-np.einsum('ijba,ijab',dict_t2[r,iroot],dict_Y_ijab[m,jroot])
+        B_Y_ijab[loc2,loc1] = 2.0*np.einsum('ijab,ijab',dict_t2[m,jroot],dict_Y_ijab[r,iroot])-np.einsum('ijba,ijab',dict_t2[m,jroot],dict_Y_ijab[r,iroot])
+  
+  for iroot in range(0,nroot):
+    for jroot in range(0,nroot):
+      loc1 = r*nroot+iroot
+      loc2 = r*nroot+jroot
+      B_Y_ia[loc1,loc2] = 2.0*np.einsum('ia,ia',dict_t1[r,iroot],dict_Y_ia[r,jroot])
+      B_Y_ijab[loc1,loc2] = 2.0*np.einsum('ijab,ijab',dict_t2[r,iroot],dict_Y_ijab[r,jroot])-np.einsum('ijba,ijab',dict_t2[r,iroot],dict_Y_ijab[r,jroot])
+
   B_total = B_Y_ia+B_Y_ijab
-  #print B_total
+  print B_total
 
 ##-------Diagonalization of the B matrix----------##
       
@@ -248,10 +255,10 @@ for x in range(0,lrt_iter):
       dict_ortho_t1[iroot] += - ovrlap*dict_t1[m,iroot]  
       dict_ortho_t2[iroot] += - ovrlap*dict_t2[m,iroot]  
   
-      for jroot in range(0,iroot):
-        overlap = 2.0*np.einsum('ia,ia',dict_norm_t1[jroot],dict_t1_2[iroot]) + 2.0*np.einsum('ijab,ijab',dict_norm_t2[jroot],dict_t2_2[iroot]) - np.einsum('ijab,ijba',dict_norm_t2[jroot],dict_t2_2[iroot])
-        dict_ortho_t1[iroot] += -overlap*dict_norm_t1[jroot]
-        dict_ortho_t2[iroot] += -overlap*dict_norm_t2[jroot]
+    for jroot in range(0,iroot):
+      overlap = 2.0*np.einsum('ia,ia',dict_norm_t1[jroot],dict_t1_2[iroot]) + 2.0*np.einsum('ijab,ijab',dict_norm_t2[jroot],dict_t2_2[iroot]) - np.einsum('ijab,ijba',dict_norm_t2[jroot],dict_t2_2[iroot])
+      dict_ortho_t1[iroot] += -overlap*dict_norm_t1[jroot]
+      dict_ortho_t2[iroot] += -overlap*dict_norm_t2[jroot]
     #print dict_ortho_t1 
 
 ##--------Normalization of the new t and s------##
@@ -273,7 +280,7 @@ for x in range(0,lrt_iter):
     dict_t1[r+1,iroot] = dict_norm_t1[iroot]
     dict_t2[r+1,iroot] = dict_norm_t2[iroot]
     nrm = 2.0*np.einsum('ia,ia',dict_t1[r+1,iroot],dict_t1[r+1,iroot]) + 2.0*np.einsum('ijab,ijab',dict_t2[r+1,iroot],dict_t2[r+1,iroot]) - np.einsum('ijab,ijba',dict_t2[r+1,iroot],dict_t2[r+1,iroot])
-    #print "final norm:", iroot, nrm
+    print "final norm:", iroot, nrm
     #print dict_t1[r+1,iroot]
 
   #for iroot in range(0,nroot):
