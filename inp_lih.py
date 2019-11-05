@@ -14,13 +14,16 @@ basis = {'H': 'sto-3g','Li':'sto-3g'},
 symmetry = True)
 
 ##------Specify linear or non-linear-------##
-calc = 'ICCSD'
+calc = 'CCSD'
 
 ##------Specify convergence criteria-------##
 conv = 8
 
 ##------Specify number of iteration--------##
 n_iter = 40
+
+##------Specify number of iteration for LRT--------##
+lrt_iter = 30
 
 ##------Specify DIIS-------------##
 diis = True
@@ -39,3 +42,6 @@ n_davidson = 40
 
 ##-----Projecting out the ground state t and s i.e coupled cluster solution---------## 
 proj_out_t0 = True
+
+##---------Number of roots required---------------##
+nroot = 2
