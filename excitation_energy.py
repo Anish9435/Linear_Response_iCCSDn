@@ -29,7 +29,6 @@ D2 = -1.0*MP2.D2
 dict_t1,dict_t2 = davidson.guess_X(occ,virt,o_act,v_act)
 twoelecint_mo = MP2.twoelecint_mo 
 count = [0]*nroot
-print dict_t1
 
 ##-----------Initialization of Dictionaries for storing the values----------##
 
@@ -55,21 +54,23 @@ for x in range(0,lrt_iter):
   r = x%n_davidson
   print ("          Subspace vector "+str(r))
   print ("-------------------------------------------------")
+
+  if(x>0):
+    if r==0:
+      dict_Y_ia.clear()
+      dict_Y_ijab.clear()
+
+      dict_t1.clear()
+      dict_t2.clear()
+    
+      B_Y_ia = np.zeros((nroot,nroot))
+      B_Y_ijab = np.zeros((nroot,nroot))
+    
+      for iroot in range(0,nroot):
+        dict_t1[r,iroot] = dict_x_t1[n_davidson-1,iroot]  
+        dict_t2[r,iroot] = dict_x_t2[n_davidson-1,iroot]  
+
   for iroot in range(0,nroot):
-    if(x>0):
-      if r==0:
-        dict_Y_ia.clear()
-        dict_Y_ijab.clear()
-
-        dict_t1.clear()
-        dict_t2.clear()
-      
-        B_Y_ia = np.zeros((nroot*(r+1),nroot*(r+1)))
-        B_Y_ijab = np.zeros((nroot*(r+1),nroot*(r+1)))
-      
-        dict_t1[r,iroot] = dict_x_t1[r,iroot]  
-        dict_t2[r,iroot] = dict_x_t1[r,iroot]  
-
 
 ##---------------------------------Diagrams and intermediates of CCSD-----------------------------------------------##
   
@@ -119,6 +120,7 @@ for x in range(0,lrt_iter):
     dict_Y_ijab[r,iroot] += 0.5*np.einsum('ijkl,ka,lb->ijab',twoelecint_mo[:occ,:occ,:occ,:occ],dict_t1[r,iroot],t1)      #diagram non-linear 1
     dict_Y_ijab[r,iroot] += 0.5*np.einsum('cdab,ic,jd->ijab',twoelecint_mo[occ:nao,occ:nao,occ:nao,occ:nao],dict_t1[r,iroot],t1)      #diagram non-linear 2
     dict_Y_ijab[r,iroot] = cc_symmetrize.symmetrize(dict_Y_ijab[r,iroot])
+    
 ##------------------------------------------------------------------------------##
 
 ##---------Construction of B matrix---------------##
@@ -198,7 +200,6 @@ for x in range(0,lrt_iter):
     if (norm > 1e-9):
       dict_x_t1[r,iroot] = dict_x_t1[r,iroot]/norm
       dict_x_t2[r,iroot] = dict_x_t2[r,iroot]/norm
-    #print dict_x_t1
  
 ##------Formation of residual matrix--------##
   
@@ -258,14 +259,8 @@ for x in range(0,lrt_iter):
   
     for jroot in range(0,iroot):
       overlap = 2.0*np.einsum('ia,ia',dict_norm_t1[jroot],dict_t1_2[iroot]) + 2.0*np.einsum('ijab,ijab',dict_norm_t2[jroot],dict_t2_2[iroot]) - np.einsum('ijab,ijba',dict_norm_t2[jroot],dict_t2_2[iroot])
-      #overlap = 2.0*np.einsum('ia,ia',dict_ortho_t1[jroot],dict_t1_2[iroot]) + 2.0*np.einsum('ijab,ijab',dict_ortho_t2[jroot],dict_t2_2[iroot]) - np.einsum('ijab,ijba',dict_ortho_t2[jroot],dict_t2_2[iroot])
       dict_ortho_t1[iroot] += -overlap*dict_norm_t1[jroot]
       dict_ortho_t2[iroot] += -overlap*dict_norm_t2[jroot]
-      #dict_ortho_t1[iroot] += -overlap*dict_ortho_t1[jroot]
-      #dict_ortho_t2[iroot] += -overlap*dict_ortho_t2[jroot]
-    #print dict_ortho_t1 
-
-    #print dict_ortho_t1 
 
 ##--------Normalization of the new t and s------##
 
@@ -287,17 +282,16 @@ for x in range(0,lrt_iter):
     dict_t2[r+1,iroot] = dict_norm_t2[iroot]
     nrm = 2.0*np.einsum('ia,ia',dict_t1[r+1,iroot],dict_t1[r+1,iroot]) + 2.0*np.einsum('ijab,ijab',dict_t2[r+1,iroot],dict_t2[r+1,iroot]) - np.einsum('ijab,ijba',dict_t2[r+1,iroot],dict_t2[r+1,iroot])
     print "final norm:", iroot, nrm
-    #print dict_t1[r+1,iroot]
 
-  for iroot in range(0,nroot):
-    for m in range(0,r+1):
-      for jroot in range(0,nroot):
-        ovrlap = 2.0*np.einsum('ia,ia',dict_ortho_t1[iroot],dict_t1[m,jroot]) + 2.0*np.einsum('ijab,ijab',dict_ortho_t2[iroot],dict_t2[m,jroot]) - np.einsum('ijab,ijba',dict_ortho_t2[iroot],dict_t2[m,jroot])
-        print 'OVERLAP: ', 'iroot:', iroot, 'm:', m, 'jroot', jroot, 'overlap:', ovrlap
-  
-    for jroot in range(0,iroot):
-      overlap = 2.0*np.einsum('ia,ia',dict_ortho_t1[jroot],dict_ortho_t1[iroot]) + 2.0*np.einsum('ijab,ijab',dict_ortho_t2[jroot],dict_ortho_t2[iroot]) - np.einsum('ijab,ijba',dict_ortho_t2[jroot],dict_ortho_t2[iroot])
-      print 'OVERLAP: ', 'iroot:', iroot, 'm:', r, 'jroot', jroot, 'overlap:', ovrlap
+# for iroot in range(0,nroot):
+#   for m in range(0,r+1):
+#     for jroot in range(0,nroot):
+#       ovrlap = 2.0*np.einsum('ia,ia',dict_ortho_t1[iroot],dict_t1[m,jroot]) + 2.0*np.einsum('ijab,ijab',dict_ortho_t2[iroot],dict_t2[m,jroot]) - np.einsum('ijab,ijba',dict_ortho_t2[iroot],dict_t2[m,jroot])
+#       print 'OVERLAP: ', 'iroot:', iroot, 'm:', m, 'jroot', jroot, 'overlap:', ovrlap
+# 
+#   for jroot in range(0,iroot):
+#     overlap = 2.0*np.einsum('ia,ia',dict_ortho_t1[jroot],dict_ortho_t1[iroot]) + 2.0*np.einsum('ijab,ijab',dict_ortho_t2[jroot],dict_ortho_t2[iroot]) - np.einsum('ijab,ijba',dict_ortho_t2[jroot],dict_ortho_t2[iroot])
+#     print 'OVERLAP: ', 'iroot:', iroot, 'm:', r, 'jroot', jroot, 'overlap:', ovrlap
 
   #for iroot in range(0,nroot):
   #  for m in range(0,r+1):
