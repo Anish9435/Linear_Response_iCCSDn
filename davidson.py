@@ -15,7 +15,7 @@ def find_orb_indcs(Tmat):
     print 'WARNING: There is degeneracy in the system'
   ind_occ = result[0][0]
   ind_virt = result[1][0]
-
+  
   return ind_occ,ind_virt
 
 
@@ -38,13 +38,16 @@ def koopmann_spectrum(occ,virt,o_act,v_act):
 
 def guess_X(occ,virt,o_act,v_act):
 
+  dict_t1_nonortho_guess = {}
+  dict_t2_nonortho_guess = {}
+  dict_So_nonortho_guess = {}
+  dict_Sv_nonortho_guess = {}
 
-  dict_t1_nonortho_guess ={}
-  dict_t2_nonortho_guess ={}
   for iroot in range(0,nroot):
-
     t1_guess = np.zeros((occ,virt))
     t2_guess = np.zeros((occ,occ,virt,virt))
+    So_guess = np.zeros((occ,occ,virt,o_act))
+    Sv_guess = np.zeros((occ,v_act,virt,virt))
 
     if(iroot==0):
       t1_tmp=koopmann_spectrum(occ,virt,o_act,v_act)
@@ -53,31 +56,40 @@ def guess_X(occ,virt,o_act,v_act):
 
     t1_guess[io,iv] = 1.0/math.sqrt(2.0)  
 
-    dict_t1_nonortho_guess[0,iroot]=t1_guess
-    dict_t2_nonortho_guess[0,iroot]=t2_guess
+    dict_t1_nonortho_guess[0,iroot] = t1_guess
+    dict_t2_nonortho_guess[0,iroot] = t2_guess
+    dict_So_nonortho_guess[0,iroot] = So_guess
+    dict_Sv_nonortho_guess[0,iroot] = Sv_guess
 
     t1_tmp[io,iv]=123.456
 
-  dict_t1,dict_t2 = orthogonalize_guess(dict_t1_nonortho_guess,dict_t2_nonortho_guess)
+  dict_t1,dict_t2,dict_So,dict_Sv = orthogonalize_guess(dict_t1_nonortho_guess,dict_t2_nonortho_guess,dict_So_nonortho_guess,dict_Sv_nonortho_guess)
 
-  return dict_t1,dict_t2
+  return dict_t1,dict_t2,dict_So,dict_Sv
 
-def orthogonalize_guess(dict_t1_nonortho_guess,dict_t2_nonortho_guess):
+def orthogonalize_guess(dict_t1_nonortho_guess,dict_t2_nonortho_guess,dict_So_nonortho_guess,dict_Sv_nonortho_guess):
 
   dict_t1_ortho_guess = {}
   dict_t2_ortho_guess = {}
+  dict_So_ortho_guess = {}
+  dict_Sv_ortho_guess = {}
 
   for iroot in range(0,nroot):
     dict_t1_ortho_guess[0,iroot] = dict_t1_nonortho_guess[0,iroot]
     dict_t2_ortho_guess[0,iroot] = dict_t2_nonortho_guess[0,iroot]
+    dict_So_ortho_guess[0,iroot] = dict_So_nonortho_guess[0,iroot]
+    dict_Sv_ortho_guess[0,iroot] = dict_Sv_nonortho_guess[0,iroot]
 
     for jroot in range(0,iroot):
-      ovrlp = 2.0*np.einsum('ia,ia', dict_t1_nonortho_guess[0,iroot],dict_t1_nonortho_guess[0,jroot]) + 2.0*np.einsum('ijab,ijab',dict_t2_ortho_guess[0,iroot],dict_t2_ortho_guess[0,jroot]) - np.einsum('ijab,ijba',dict_t2_ortho_guess[0,iroot],dict_t2_ortho_guess[0,jroot])
+      ovrlp = 2.0*np.einsum('ia,ia', dict_t1_nonortho_guess[0,iroot],dict_t1_nonortho_guess[0,jroot]) + 2.0*np.einsum('ijab,ijab',dict_t2_ortho_guess[0,iroot],dict_t2_ortho_guess[0,jroot]) - np.einsum('ijab,ijba',dict_t2_ortho_guess[0,iroot],dict_t2_ortho_guess[0,jroot]) + 2.0*np.einsum('ijav,ijav',dict_So_nonortho_guess[0,iroot],dict_So_nonortho_guess[0,jroot]) - np.einsum('ijav,jiav',dict_So_nonortho_guess[0,iroot],dict_So_nonortho_guess[0,jroot]) + 2.0*np.einsum('iuab,iuab',dict_Sv_nonortho_guess[0,iroot],dict_Sv_nonortho_guess[0,jroot]) - np.einsum('iuab,iuba',dict_Sv_nonortho_guess[0,iroot],dict_Sv_nonortho_guess[0,jroot])
+
       dict_t1_ortho_guess[0,iroot] += -ovrlp*dict_t1_nonortho_guess[0,jroot]
       dict_t2_ortho_guess[0,iroot] += -ovrlp*dict_t2_nonortho_guess[0,jroot]
+      dict_So_ortho_guess[0,iroot] += -ovrlp*dict_So_nonortho_guess[0,jroot]
+      dict_Sv_ortho_guess[0,iroot] += -ovrlp*dict_Sv_nonortho_guess[0,jroot]
 
 
-  return dict_t1_ortho_guess,dict_t2_ortho_guess
+  return dict_t1_ortho_guess,dict_t2_ortho_guess,dict_So_ortho_guess,dict_Sv_ortho_guess
 
 def get_XO(R,D,Omega):
   X = np.divide(R,(D-Omega))

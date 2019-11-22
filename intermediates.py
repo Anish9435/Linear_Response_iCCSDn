@@ -93,15 +93,15 @@ def update_int_response(t2,I_vv,I_oo,Ioooo,Iovvo,Iovvo_2,Iovov):
 
 ##-------Creating intermediates involving S which will lead to diagrams in R_ijab-------##
 
-def W1_int_So(x):
+def W1_int_So(So):
   II_oo = np.zeros((occ,occ)) 
-  II_oo[:,occ-o_act:occ] += -2*0.25*np.einsum('ciml,mlcv->iv',twoelecint_mo[occ:nao,:occ,:occ,:occ],x) + 0.25*np.einsum('diml,lmdv->iv',twoelecint_mo[occ:nao,:occ,:occ,:occ],x)
+  II_oo[:,occ-o_act:occ] += -2*0.25*np.einsum('ciml,mlcv->iv',twoelecint_mo[occ:nao,:occ,:occ,:occ],So) + 0.25*np.einsum('diml,lmdv->iv',twoelecint_mo[occ:nao,:occ,:occ,:occ],So)
   return II_oo
   gc.collect()
 
-def W1_int_Sv(x):
+def W1_int_Sv(Sv):
   II_vv = np.zeros((virt,virt))
-  II_vv[:v_act,:] += 2*0.25*np.einsum('dema,mude->ua',twoelecint_mo[occ:nao,occ:nao,:occ,occ:nao],x) - 0.25*np.einsum('dema,mued->ua',twoelecint_mo[occ:nao,occ:nao,:occ,occ:nao],x)
+  II_vv[:v_act,:] += 2*0.25*np.einsum('dema,mude->ua',twoelecint_mo[occ:nao,occ:nao,:occ,occ:nao],Sv) - 0.25*np.einsum('dema,mued->ua',twoelecint_mo[occ:nao,occ:nao,:occ,occ:nao],Sv)
   return II_vv
   gc.collect()
 
@@ -161,4 +161,20 @@ def singles_intermediates(t1,t2,I_oo,I_vv,I2):
   I3 = None
   gc.collect()
   
+def norm_response_So(So):
+  norm_oo = np.zeros((occ,occ))  
+  norm_oo[occ-o_act:occ,occ-o_act:occ] += 0.25*(-2.0*np.einsum('ijau,ijav->uv',So,So) + np.einsum('ijau,jiav->uv',So,So))  
+  return norm_oo
+  norm_oo = None
+  gc.collect
+
+def norm_response_Sv(Sv):
+  norm_vv = np.zeros((virt,virt))  
+  norm_vv[:v_act,:v_act] += 0.25*(2.0*np.einsum('iyab,iwab->yw',Sv,Sv) - np.einsum('iyab,iwba->yw',Sv,Sv))
+  return norm_vv
+  norm_vv = None
+  gc.collect
+
+
+
 

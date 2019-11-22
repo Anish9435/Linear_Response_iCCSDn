@@ -5,6 +5,7 @@ import inp
 
 from pyscf import gto, scf, cc
 from pyscf.cc import ccsd_t
+from pyscf import symm
 
 mol = inp.mol
 
@@ -27,9 +28,15 @@ mf = scf.RHF(mol).run()
 E_hf = mf.e_tot
 hf_mo_E = mf.mo_energy
 hf_mo_coeff = mf.mo_coeff
-print hf_mo_coeff
 
 Fock_mo = np.zeros((nao,nao))
+'''
+orb_symm = []
+mol.build(0, 0, symmetry='Coov')
+mo = symm.symmetrize_space(mol, mf.mo_coeff)
+orb_symm = symm.label_orb_symm(mol, mol.irrep_name, mol.symm_orb, mo)
+print orb_symm
+'''
 
 #    Set up initial Fock matrix
 Fock = T + V
