@@ -165,7 +165,7 @@ for x in range(0,lrt_iter):
 
 ##------------------------------------------------------------------------------------------------##
 
-##---------------------A_lambda So and Sv sector------------------------##
+##--------------------A_lambda So and Sv sector------------------------##
 
     dict_Y_ijab[r,iroot] += amplitude_response.inserted_diag_So(dict_t2[r,iroot],II_oo)
     dict_Y_ijab[r,iroot] += amplitude_response.inserted_diag_So(t2,II_oo_new)
@@ -247,7 +247,7 @@ for x in range(0,lrt_iter):
       loc2 = r*nroot+jroot
 
       B_Y_ia[loc1,loc2] = 2.0*np.einsum('ia,ia',dict_t1[r,iroot],dict_Y_ia[r,jroot])
-      B_Y_ijab[loc1,loc2] = 2.0*np.einsum('ijab,ijab',dict_t2[r,iroot],dict_Y_ijab[r,iroot])-np.einsum('ijba,ijab',dict_t2[r,iroot],dict_Y_ijab[r,jroot])
+      B_Y_ijab[loc1,loc2] = 2.0*np.einsum('ijab,ijab',dict_t2[r,iroot],dict_Y_ijab[r,jroot])-np.einsum('ijba,ijab',dict_t2[r,iroot],dict_Y_ijab[r,jroot])
       B_Y_ijav[loc1,loc2] = 2.0*np.einsum('ijav,ijav',dict_So[r,iroot],dict_Y_ijav[r,jroot])-np.einsum('jiav,ijav',dict_So[r,iroot],dict_Y_ijav[r,jroot])
       B_Y_iuab[loc1,loc2] = 2.0*np.einsum('iuab,iuab',dict_Sv[r,iroot],dict_Y_iuab[r,jroot])-np.einsum('iuba,iuab',dict_Sv[r,iroot],dict_Y_iuab[r,jroot])
    
@@ -453,7 +453,7 @@ for x in range(0,lrt_iter):
 ##----------------------------------------------------------------------------------------------------##     
                                              #THE END#
 ##----------------------------------------------------------------------------------------------------##     
-     
+  '''   
   for m in range(0,int(r+1)):
     for iroot in range(0,nroot):
       p = 2.0*np.einsum('ia,ia',dict_t1[m,iroot],dict_ortho_t1[iroot])
@@ -462,4 +462,4 @@ for x in range(0,lrt_iter):
       s = 2.0*np.einsum('iuab,iuab',dict_Sv[m,iroot],dict_ortho_Sv[iroot])-np.einsum('iuab,iuba',dict_Sv[m,iroot],dict_ortho_Sv[iroot])
       y = p+q+r+s
       print "overlap:", iroot,p,q,r,s,y  
-  
+  '''
