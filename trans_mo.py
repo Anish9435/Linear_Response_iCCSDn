@@ -30,13 +30,14 @@ hf_mo_E = mf.mo_energy
 hf_mo_coeff = mf.mo_coeff
 
 Fock_mo = np.zeros((nao,nao))
-'''
+
 orb_symm = []
-mol.build(0, 0, symmetry='Coov')
+#mol.build(0, 0, symmetry='C2v')
 mo = symm.symmetrize_space(mol, mf.mo_coeff)
-orb_symm = symm.label_orb_symm(mol, mol.irrep_name, mol.symm_orb, mo)
-print orb_symm
-'''
+#orb_symm = symm.label_orb_symm(mol, mol.irrep_name, mol.symm_orb, mo)
+orb_symm = symm.label_orb_symm_num(mol, mol.irrep_name, mol.symm_orb, mo)
+#print orb_symm
+
 
 #    Set up initial Fock matrix
 Fock = T + V
@@ -69,7 +70,7 @@ def check_mo():
     print "MO conversion successful"
   return
 print Escf_mo,E_hf
-print hf_mo_E
+#print hf_mo_E
 check_mo()
 
 #Create Fock matrix
