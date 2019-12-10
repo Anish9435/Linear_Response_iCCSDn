@@ -5,6 +5,9 @@ import math
 import MP2
 import trans_mo
 
+##---------------------------------------------------------------------##
+                    #Group multiplication table#
+##---------------------------------------------------------------------##
 
 _multd2h = [[1,2,3,4,5,6,7,8],
 [2,1,4,3,6,5,8,7],
@@ -15,16 +18,9 @@ _multd2h = [[1,2,3,4,5,6,7,8],
 [7,8,5,6,3,4,1,2],
 [8,7,6,5,4,3,2,1]]
 
-# This function finds out the orbital indices of the lowest excitation
-def find_orb_indcs(Tmat):
-
-  result = np.where(Tmat == np.amin(Tmat))
-  if (len(result[0])>1):
-    print 'WARNING: There is degeneracy in the system'
-  ind_occ = result[0][0]
-  ind_virt = result[1][0]
-  
-  return ind_occ,ind_virt
+##---------------------------------------------------------------------##
+               #Orbital indices of the lowest excitation#
+##---------------------------------------------------------------------##
 
 def find_orb_indcs_all(T1mat, T2mat):
 
@@ -49,27 +45,13 @@ def find_orb_indcs_all(T1mat, T2mat):
     ind_occ = [result[0][0], result[1][0]]
     ind_virt = [result[2][0], result[3][0]]
     iEx = 2
-
   
   return ind_occ,ind_virt, iEx
 
 
-
-def koopmann_spectrum(occ,virt,o_act,v_act):
-  
-  # Need both the fock matrix and the one-body hamiltonian matrix to find out lowest excitation
-  Fock_mo = MP2.Fock_mo
-  h_pq = trans_mo.oneelecint_mo
-  # Store the excitation energy obtained using the Fock matrix
-  t1_tmp = np.zeros((occ,virt))
-  for i in range(0,occ):
-    for a in range(0,virt):
-      # Store only the symmetry allowed excitations
-      if (abs(h_pq[i,a+occ])>1e-12):
-        t1_tmp[i,a] = abs(Fock_mo[i,i]-Fock_mo[a+occ,a+occ])
-      else: 
-        t1_tmp[i,a] = 123.456 # initialize with some large number
-  return t1_tmp
+##---------------------------------------------------------------------##
+                #Single excitation dominated spectrum#
+##---------------------------------------------------------------------##
 
 def koopmann_spectrum_sym_sing(occ,virt,o_act,v_act, orb_sym, isym):
   
@@ -88,6 +70,10 @@ def koopmann_spectrum_sym_sing(occ,virt,o_act,v_act, orb_sym, isym):
         t1_tmp[i,a] = 123.456 # initialize with some large number
 
   return t1_tmp
+
+##---------------------------------------------------------------------##
+               #Double excitation dominated spectrum#
+##---------------------------------------------------------------------##
 
 def koopmann_spectrum_sym_doub(occ,virt,o_act,v_act, orb_sym, isym):
   
@@ -113,53 +99,24 @@ def koopmann_spectrum_sym_doub(occ,virt,o_act,v_act, orb_sym, isym):
           else: 
             t2_tmp[i,j,a,b] = 123.456 # initialize with some large number
 
- # print '****'
- # print t1_tmp
- # print '****'
   return t2_tmp
 
+tiCCSD = False
+if inp.LR_type == 'iCCSD':
+  tiCCSD = True
 
-def guess_X(occ,virt,o_act,v_act,nroot):
-
-  dict_t1 = {}
-  dict_t2 = {}
-  dict_So = {}
-  dict_Sv = {}
-
-  for iroot in range(0,nroot):
-    t1_guess = np.zeros((occ,virt))
-    t2_guess = np.zeros((occ,occ,virt,virt))
-    So_guess = np.zeros((occ,occ,virt,o_act))
-    Sv_guess = np.zeros((occ,v_act,virt,virt))
-
-    if(iroot==0):
-      t1_tmp=koopmann_spectrum(occ,virt,o_act,v_act)
-
-    io,iv = find_orb_indcs(t1_tmp)
-
-    t1_guess[io,iv] = 1.0/math.sqrt(2.0)  
-
-    dict_t1[0,iroot] = t1_guess
-    dict_t2[0,iroot] = t2_guess
-    dict_So[0,iroot] = So_guess
-    dict_Sv[0,iroot] = Sv_guess
-
-    t1_tmp[io,iv]=123.456
-
-  return dict_t1,dict_t2,dict_So,dict_Sv
+##---------------------------------------------------------------------##
+               #Calculate guess considering the symmetry#
+##---------------------------------------------------------------------##
 
 def guess_sym(occ,virt,o_act,v_act, orb_sym, isym, nroot):
 
   dict_t1 = {}
   dict_t2 = {}
-  dict_So = {}
-  dict_Sv = {}
 
   for iroot in range(0,nroot):
     t1_guess = np.zeros((occ,virt))
     t2_guess = np.zeros((occ,occ,virt,virt))
-    So_guess = np.zeros((occ,occ,virt,o_act))
-    Sv_guess = np.zeros((occ,v_act,virt,virt))
 
     if(iroot==0):
       t1_tmp=koopmann_spectrum_sym_sing(occ,virt,o_act,v_act, orb_sym, isym)
@@ -170,20 +127,74 @@ def guess_sym(occ,virt,o_act,v_act, orb_sym, isym, nroot):
     if (iEx == 1):
       t1_guess[io,iv] = 1.0/math.sqrt(2.0)  
       t1_tmp[io,iv]=123.456
+
     elif (iEX == 2):
       t2_guess[io[0],io[1],iv[0],iv[1]] = 1.0/2.0  
       t2_tmp[io[0],io[1],iv[0],iv[1]]=123.456
+
     else: 
       print 'Wrong Guess'
       exit()     
 
     dict_t1[0,iroot] = t1_guess
     dict_t2[0,iroot] = t2_guess
-    dict_So[0,iroot] = So_guess
-    dict_Sv[0,iroot] = Sv_guess
+
+  if (tiCCSD):
+    dict_So = {}
+    dict_Sv = {}
+
+    for iroot in range(0,nroot):
+      So_guess = np.zeros((occ,occ,virt,o_act))
+      Sv_guess = np.zeros((occ,v_act,virt,virt))
+
+      dict_So[0,iroot] = So_guess
+      dict_Sv[0,iroot] = Sv_guess
+
+    return dict_t1,dict_t2,dict_So,dict_Sv
+
+  else:
+    return dict_t1,dict_t2
 
 
-  return dict_t1,dict_t2,dict_So,dict_Sv
+##---------------------------------------------------------------------##
+                   #Calculation of the residue#
+##---------------------------------------------------------------------##
+
+def get_XO(R,D,Omega):
+  X = np.divide(R,(D-Omega))
+  return X
+    
+##---------------------------------------------------------------------##
+        #Determine orbital symmetry for different point group#
+##---------------------------------------------------------------------##
+
+def get_orb_sym(orb_sym_pyscf, sym):
+
+  sym_num_comm = {}
+  if (sym=='D2h'):
+    sym_num_comm[0] = 0
+    sym_num_comm[1] = 3
+    sym_num_comm[2] = 5
+    sym_num_comm[3] = 6
+    sym_num_comm[4] = 7
+    sym_num_comm[5] = 4
+    sym_num_comm[6] = 2
+    sym_num_comm[7] = 1
+  if ((sym=='C2v') or (sym=='C2h')):
+    sym_num_comm[0] = 0
+    sym_num_comm[1] = 3
+    sym_num_comm[2] = 1
+    sym_num_comm[3] = 2
+
+  orb_sym = []
+  for i in orb_sym_pyscf:
+    orb_sym.append(sym_num_comm[i])
+    
+  return orb_sym
+
+##---------------------------------------------------------------------##
+                  #Calculate the guess manually#
+##---------------------------------------------------------------------##
 
 def guess_X_man(occ,virt,o_act,v_act,nroot):
 
@@ -214,30 +225,6 @@ def guess_X_man(occ,virt,o_act,v_act,nroot):
 
   return dict_t1,dict_t2,dict_So,dict_Sv
 
-def get_XO(R,D,Omega):
-  X = np.divide(R,(D-Omega))
-  return X
-    
-def get_orb_sym(orb_sym_pyscf, sym):
-
-  sym_num_comm = {}
-  if (sym=='D2h'):
-    sym_num_comm[0] = 0
-    sym_num_comm[1] = 3
-    sym_num_comm[2] = 5
-    sym_num_comm[3] = 6
-    sym_num_comm[4] = 7
-    sym_num_comm[5] = 4
-    sym_num_comm[6] = 2
-    sym_num_comm[7] = 1
-  if ((sym=='C2v') or (sym=='C2h')):
-    sym_num_comm[0] = 0
-    sym_num_comm[1] = 3
-    sym_num_comm[2] = 1
-    sym_num_comm[3] = 2
-
-  orb_sym = []
-  for i in orb_sym_pyscf:
-    orb_sym.append(sym_num_comm[i])
-    
-  return orb_sym
+##---------------------------------------------------------------------##
+                               #THE END#
+##---------------------------------------------------------------------##

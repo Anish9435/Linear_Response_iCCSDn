@@ -14,12 +14,15 @@ H   0.00000   1.644403   1.32213
 H   0.00000   -1.644403  1.32213
 ''', 
 #basis = 'ccpvdzd',
-basis = 'cc-pVDZ',
+basis = 'ccpvdzd',
 symmetry = 'c2v',
 )
 
 ##------Specify linear or non-linear-------##
-calc = 'ICCSD'
+calc = 'CCSD'
+
+##------Specify LRT calculation-------##
+LR_type = None
 
 ##------Specify convergence criteria-------##
 conv = 6
@@ -28,7 +31,7 @@ conv = 6
 n_iter = 40
 
 ##------Specify number of iteration for LRT--------##
-lrt_iter = 30
+lrt_iter = 50
 
 ##------Specify DIIS-------------##
 diis = True
@@ -46,7 +49,7 @@ nfv = 0
 n_davidson = 40
 
 ##---------Number of roots required---------------##
-nroot = [0,0,0,1]
+nroot = [2,0,0,0]
 
 
 
@@ -61,4 +64,8 @@ H   0.000000,  0.000000,  2.6437904102
 O   0.000000   0.00000    0.1366052
 H   0.768958   0.00000   -0.5464208
 H  -0.768958   0.00000   -0.5464208
+
+C   0.00000   0.000000   0.00000
+H   0.00000   1.644403   1.32213
+H   0.00000   -1.644403  1.32213
 '''
