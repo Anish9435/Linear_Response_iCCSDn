@@ -1,4 +1,19 @@
-# Import modules
+
+                   ##----------------------------------------------------------------------------------------------------------------##
+                                   
+                                              # Routine to calculate the guess to determine Excitation Energy #
+                                    
+                                   # Calculate the different t and s diagrams associated with the Linear Response Theory #
+
+                                           # Author: Anish Chakraborty, Pradipta Samanta & Rahul Maitra #
+                                                           # Date - 10th Dec, 2019 # 
+
+                   ##----------------------------------------------------------------------------------------------------------------##
+
+##------------------------------------------------------##
+                 #Import modules#
+##------------------------------------------------------##
+
 import gc
 import numpy as np
 import copy as cp
@@ -7,7 +22,9 @@ import MP2
 import inp
 import intermediates
 
-##-------import important stuff-------##
+##--------------------------------------------------------##
+              #Import important variables#
+##--------------------------------------------------------##
 
 nao = MP2.nao
 twoelecint_mo = MP2.twoelecint_mo 
@@ -25,7 +42,9 @@ v_act = inp.v_act
 conv = 10**(-inp.conv)
 
 
-##-------Function exclusive for LRT i.e there is no bare hamiltonian term------##
+##-----------------------------------------------------------------------------------------------##
+                #Function exclusive for LRT i.e there is no bare hamiltonian term#
+##-----------------------------------------------------------------------------------------------##
 
 def singles_response_linear(I_oo,I_vv,t1,t2):
   R_ia = -np.einsum('ik,ka->ia',I_oo,t1)   #diagrams 1
@@ -42,7 +61,9 @@ def singles_response_linear(I_oo,I_vv,t1,t2):
   R_ia = None
   gc.collect()
 
-##----------Quardratic terms--------------##
+##-------------------------------------------------------------------------------------------##
+                                    #Quardratic terms#
+##-------------------------------------------------------------------------------------------##
 
 def singles_response_quadratic(I_oo,I_vv,I1,I2,t1,t2):
   R_ia = -np.einsum('ik,ka->ia',I_oo,t1)   #diagrams l,j,m,n
@@ -57,7 +78,9 @@ def singles_response_quadratic(I_oo,I_vv,I1,I2,t1,t2):
   R_ia = None
   gc.collect()
 
-##-------Similar as R_ia for LRT i.e no bare hamiltonian term---------##
+##------------------------------------------------------------------------------------------------##
+                   #Similar as R_ia for LRT i.e no bare hamiltonian term#
+##------------------------------------------------------------------------------------------------##
 
 def doubles_response_linear(I_oo,I_vv,Ivvvv,Ioooo,Iovvo,Iovvo_2,Iovov,Iovov_2,t1,t2):
   print " "
@@ -83,7 +106,9 @@ def doubles_response_linear(I_oo,I_vv,Ivvvv,Ioooo,Iovvo,Iovvo_2,Iovov,Iovov_2,t1
   R_ijab = None
   gc.collect()
 
-##--------Quadratic terms-------------##
+##-------------------------------------------------------------------------------------##
+                                  #Quadratic terms#
+##-------------------------------------------------------------------------------------##
 
 def doubles_response_quadratic(I_oo,I_vv,Ioooo,Iovvo,Iovvo_2,Iovov,t2):
   print " "
@@ -103,7 +128,9 @@ def doubles_response_quadratic(I_oo,I_vv,Ioooo,Iovvo,Iovvo_2,Iovov,t2):
   R_ijab = None
   gc.collect()
 
-##--------Linear Response Theory-------##
+##-----------------------------------------------------------------------------------##
+                              #Linear Response Theory#
+##-----------------------------------------------------------------------------------##
 
 def singles_n_doubles_response(t1,I_oovo,I_vovv):
   R_ijab = -np.einsum('ijak,kb->ijab',I_oovo,t1)       #diagrams 11,12,13,15,17
@@ -114,8 +141,11 @@ def singles_n_doubles_response(t1,I_oovo,I_vovv):
   R_ijab = None
   gc.collect() 
 
-##------Explicit diagrams for iCCSDn scheme------##
- 
+##-----------------------------------------------------------------------------------##
+                        #Explicit diagrams for iCCSDn scheme#
+                      #(ST)_c leading to the triple excitation#
+##-----------------------------------------------------------------------------------##
+
 def inserted_diag_So(t2,II_oo):
   R_ijab = -np.einsum('ik,kjab->ijab',II_oo,t2)   
   return R_ijab 
@@ -132,7 +162,9 @@ def inserted_diag_Sv(t2,II_vv):
   II_vv = None
   gc.collect()
 
-##--------Constructing S diagrams-------------------##
+##----------------------------------------------------------------------------------------------##
+             #Constructing S diagrams (i.e VS_v contraction contributing to R_iuab)#
+##----------------------------------------------------------------------------------------------##
 
 def Sv_diagram_vs_contraction_response(Sv):
   R_iuab = -np.einsum('ik,kuab->iuab',Fock_mo[:occ,:occ],Sv)
@@ -150,6 +182,9 @@ def Sv_diagram_vs_contraction_response(Sv):
   II_vv = None   
   gc.collect()
   
+##----------------------------------------------------------------------------------------------##
+             #Constructing S diagrams (i.e Vt_2 contraction contributing to R_iuab)#
+##----------------------------------------------------------------------------------------------##
   
 def Sv_diagram_vt_contraction_response(t2):
   R_iuab = 2*np.einsum('dukb,kida->iuab',twoelecint_mo[occ:nao,occ:occ+v_act,:occ,occ:nao],t2)
@@ -162,6 +197,10 @@ def Sv_diagram_vt_contraction_response(t2):
   R_iuab = None
   gc.collect() 
  
+##----------------------------------------------------------------------------------------------##
+             #Constructing S diagrams (i.e VS_o contraction contributing to R_ijav)#
+##----------------------------------------------------------------------------------------------##
+
 def So_diagram_vs_contraction_response(So):
   R_ijav = np.einsum('da,ijdv->ijav',Fock_mo[occ:nao,occ:nao],So)
   R_ijav += -np.einsum('jl,ilav->ijav',Fock_mo[:occ,:occ],So)
@@ -178,6 +217,10 @@ def So_diagram_vs_contraction_response(So):
   II_oo = None
   gc.collect()
 
+##----------------------------------------------------------------------------------------------##
+             #Constructing S diagrams (i.e Vt_2 contraction contributing to R_ijav)#
+##----------------------------------------------------------------------------------------------##
+
 def So_diagram_vt_contraction_response(t2):
   R_ijav = -np.einsum('djlv,liad->ijav',twoelecint_mo[occ:nao,:occ,:occ,occ-o_act:occ],t2)
   R_ijav += -np.einsum('djvl,lida->ijav',twoelecint_mo[occ:nao,:occ,occ-o_act:occ,:occ],t2)
@@ -189,12 +232,20 @@ def So_diagram_vt_contraction_response(t2):
   R_ijav = None
   gc.collect()
 
+##----------------------------------------------------------------------------------------------##
+             #Constructing S diagrams (i.e Vt_1 contraction contributing to R_iuab)#
+##----------------------------------------------------------------------------------------------##
+
 def T1_contribution_Sv_response(t1):
   R_iuab = -np.einsum('uika,kb->iuab',twoelecint_mo[occ:occ+v_act,:occ,:occ,occ:nao],t1)
   R_iuab += np.einsum('duab,id->iuab',twoelecint_mo[occ:nao,occ:occ+v_act,occ:nao,occ:nao],t1)
   R_iuab += -np.einsum('iukb,ka->iuab',twoelecint_mo[:occ,occ:occ+v_act,:occ,occ:nao],t1)
   return R_iuab
   R_iuab = None
+
+##----------------------------------------------------------------------------------------------##
+             #Constructing S diagrams (i.e Vt_1 contraction contributing to R_ijav)#
+##----------------------------------------------------------------------------------------------##
 
 def T1_contribution_So_response(t1):
   R_ijav = np.einsum('diva,jd->ijav',twoelecint_mo[occ:nao,:occ,occ-o_act:occ,occ:nao],t1)
@@ -203,3 +254,6 @@ def T1_contribution_So_response(t1):
   return R_ijav
   R_ijav = None
 
+                          ##-----------------------------------------------------------------------------------------------------------------------##
+                                                                                    #THE END#
+                          ##-----------------------------------------------------------------------------------------------------------------------##

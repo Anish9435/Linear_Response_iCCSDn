@@ -1,55 +1,104 @@
-#Import module
+
+                   ##----------------------------------------------------------------------------------------------------------------##
+                                   
+                                              # Input fle to run CCSD-LRT/iCCSDn-LRT to get Excitation Energy #
+                                    
+                                                # Author: Anish Chakraborty, Pradipta Samanta & Rahul Maitra #
+                                                                  # Date - 10th Dec, 2019 # 
+
+                   ##----------------------------------------------------------------------------------------------------------------##
+
+
+##---------------------------------------------------------##
+               #Import important modules
+##---------------------------------------------------------##
+
 import pyscf.gto
 from pyscf import gto
 
-##-----Specify geometry and basis set------##
+##---------------------------------------------------------##
+             #Specify geometry and basis set#       
+##---------------------------------------------------------##
 
 mol = pyscf.gto.M(
 verbose = 5,
 output = None,
 unit='Bohr',
 atom ='''
-C   0.00000   0.000000   0.00000
-H   0.00000   1.644403   1.32213
-H   0.00000   -1.644403  1.32213
+O   0.000000   0.00000    0.1366052
+H   0.768958   0.00000   -0.5464208
+H  -0.768958   0.00000   -0.5464208
 ''', 
 #basis = 'ccpvdzd',
-basis = 'ccpvdzd',
+basis = 'cc-pVDZ',
 symmetry = 'c2v',
 )
+##---------------------------------------------------------##
+            #Specify CC-Type#
+##---------------------------------------------------------##
 
-##------Specify linear or non-linear-------##
-calc = 'CCSD'
+calc = 'ICCSD'
 
-##------Specify LRT calculation-------##
-LR_type = None
+##---------------------------------------------------------##
+               #Specify LRT-Type#
+          #LR_type = 'iCCSD' for iCCSDn-LRT#
+        #LR_type = 'CCSD' or 'None' for CCSD-LRT#
+##---------------------------------------------------------##
 
-##------Specify convergence criteria-------##
-conv = 6
+LR_type = 'iCCSD'
 
-##------Specify number of iteration--------##
+##---------------------------------------------------------##
+            #Specify convergence criteria#
+##---------------------------------------------------------##
+
+conv = 5
+
+##---------------------------------------------------------##
+             #Specify number of iteration#
+##---------------------------------------------------------##
+
 n_iter = 40
 
-##------Specify number of iteration for LRT--------##
+##---------------------------------------------------------##
+          #Specify number of iteration for LRT#
+##---------------------------------------------------------##
+
 lrt_iter = 50
 
-##------Specify DIIS-------------##
+##---------------------------------------------------------##
+                      #Specify DIIS#
+              #If diis='TRUE'; it will run#
+##---------------------------------------------------------##
+
 diis = True
 max_diis = 7
 
-##------Specify number of active orbitals----##
+##---------------------------------------------------------##
+         #Specify number of active orbitals#
+##---------------------------------------------------------##
+
 o_act = 2
 v_act = 2
 
-##-----specify number of frozen orbitals-------##
+##---------------------------------------------------------##
+         #Specify number of frozen orbitals#
+##---------------------------------------------------------##
+
 nfo = 0
 nfv = 0
 
-##-----Specify no of steps after which linear combination has to be taken-----##
+##---------------------------------------------------------------------------##
+     #Specify no of steps after which linear combination has to be taken#
+##---------------------------------------------------------------------------##
+
 n_davidson = 40
 
-##---------Number of roots required---------------##
-nroot = [2,0,0,0]
+##-----------------------------------------------------------------------##
+                     #Number of roots required#
+      #The ordering of the states for C2v group is A1,B1,B2,A2#
+##-----------------------------------------------------------------------##
+
+nroot = [1,2,1,1]
 
 
 
