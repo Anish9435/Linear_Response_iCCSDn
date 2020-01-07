@@ -12,7 +12,6 @@
 
 
 import numpy as np
-import test
 import inp
 import math
 import MP2
@@ -44,7 +43,6 @@ def find_orb_indcs_all(T1mat, T2mat):
   result = np.where(T1mat == np.amin(T1mat))
 
   min_val_2 = np.amin(T2mat)
-  print 'DEBUGGING', min_val_1, min_val_2
 
   if (min_val_1 <= min_val_2):
     if (len(result[0])>1):
@@ -153,8 +151,8 @@ def guess_sym(occ,virt,o_act,v_act, orb_sym, isym, nroot):
       t1_guess[io,iv] = 1.0/math.sqrt(2.0)  
       t1_tmp[io,iv]=123.456
 
-    elif (iEX == 2):
-      t2_guess[io[0],io[1],iv[0],iv[1]] = 1.0/2.0  
+    elif (iEx == 2):
+      t2_guess[io[0],io[1],iv[0],iv[1]] = 1.0/2.0 
       t2_tmp[io[0],io[1],iv[0],iv[1]]=123.456
 
     else: 
@@ -206,11 +204,14 @@ def get_orb_sym(orb_sym_pyscf, sym):
     sym_num_comm[6] = 2
     sym_num_comm[7] = 1
 
-  if ((sym=='C2v') or (sym=='C2h')):
+  if ((sym=='C2v') or (sym=='C2h') or (sym=='Coov')):
     sym_num_comm[0] = 0
     sym_num_comm[1] = 3
     sym_num_comm[2] = 1
     sym_num_comm[3] = 2
+
+  if (sym=='C1'):
+    sym_num_comm[0] = 0
 
   orb_sym = []
   for i in orb_sym_pyscf:

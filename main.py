@@ -33,8 +33,8 @@ n_iter = inp.n_iter
 calc = inp.calc
 conv = 10**(-inp.conv)
 max_diis = inp.max_diis
-#nfo = MP2.nfo
-#nfv = MP2.nfv
+nfo = MP2.nfo
+nfv = MP2.nfv
 
 #    Evaluate the energy
 def energy_ccd(t2):
@@ -49,6 +49,8 @@ def energy_ccsd(t1,t2):
 def convergence_I(E_ccd,E_old,eps_t,eps_So,eps_Sv):
   del_E = E_ccd - E_old
   if abs(eps_t) <= conv and abs(eps_So) <= conv and abs(eps_Sv) <= conv and abs(del_E) <= conv:
+    print "change in t1+t2 , So, Sv : "+str(eps_t)+" "+str(eps_So)+" "+str(eps_Sv)
+    print "energy difference : "+str(del_E)
     print "ccd converged!!!"
     print "Total energy is : "+str(E_hf + E_ccd)
     return True
@@ -166,6 +168,7 @@ for x in range(0,n_iter):
     I_oo,I_vv,I_oovo,I_vovv,Ioooo_2,I_voov,Iovov_3,Iovvo_3,Iooov,I3=intermediates.singles_intermediates(t1,t2,I_oo,I_vv,I2)
     R_ijab = amplitude.doubles(I_oo,I_vv,Ivvvv,Ioooo,Iovvo,Iovvo_2,Iovov,Iovov_2,tau,t2)
     R_ijab += amplitude.singles_n_doubles(t1,I_oovo,I_vovv)
+    R_ijab += amplitude.higher_order(t1,t2,Iovov_3,Iovvo_3,Iooov,I3,Ioooo_2,I_voov)
     R_ijab = cc_symmetrize.symmetrize(R_ijab)
     
     oldt2 = t2.copy()
@@ -218,14 +221,17 @@ for x in range(0,n_iter):
     I_oo,I_vv,I_oovo,I_vovv,Ioooo_2,I_voov,Iovov_3,Iovvo_3,Iooov,I3=intermediates.singles_intermediates(t1,t2,I_oo,I_vv,I2)
     R_ijab = amplitude.doubles(I_oo,I_vv,Ivvvv,Ioooo,Iovvo,Iovvo_2,Iovov,Iovov_2,tau,t2)
     R_ijab += amplitude.singles_n_doubles(t1,I_oovo,I_vovv) 
+    #R_ijab += amplitude.higher_order(t1,t2,Iovov_3,Iovvo_3,Iooov,I3,Ioooo_2,I_voov)
     R_ijab += amplitude.inserted_diag_So(t2,II_oo) 
     R_ijab += amplitude.inserted_diag_Sv(t2,II_vv) 
     R_ijab = cc_symmetrize.symmetrize(R_ijab)
     
     R_iuab = amplitude.Sv_diagram_vs_contraction(Sv,II_vv)
     R_iuab += amplitude.Sv_diagram_vt_contraction(t2)
+    #R_iuab += amplitude.T1_contribution_Sv(t1)
     R_ijav = amplitude.So_diagram_vs_contraction(So,II_oo)
     R_ijav += amplitude.So_diagram_vt_contraction(t2)
+    #R_ijav += amplitude.T1_contribution_So(t1)
     
     oldt2 = t2.copy()
     oldt1 = t1.copy()

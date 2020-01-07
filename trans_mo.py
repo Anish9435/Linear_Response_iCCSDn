@@ -70,7 +70,7 @@ def check_mo():
     print "MO conversion successful"
   return
 print Escf_mo,E_hf
-#print hf_mo_E
+print hf_mo_E
 check_mo()
 
 #Create Fock matrix

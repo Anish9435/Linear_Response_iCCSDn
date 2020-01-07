@@ -1,7 +1,7 @@
 
                    ##----------------------------------------------------------------------------------------------------------------##
                                    
-                                              # Input fle to run CCSD-LRT/iCCSDn-LRT to get Excitation Energy #
+                                              # Input file to run CCSD-LRT/iCCSDn-LRT to get Excitation Energy #
                                     
                                                 # Author: Anish Chakraborty, Pradipta Samanta & Rahul Maitra #
                                                                   # Date - 10th Dec, 2019 # 
@@ -25,19 +25,19 @@ verbose = 5,
 output = None,
 unit='Bohr',
 atom ='''
-O   0.000000   0.00000    0.1366052
-H   0.768958   0.00000   -0.5464208
-H  -0.768958   0.00000   -0.5464208
+Li  0.000000,  0.000000, -0.3797714041
+H   0.000000,  0.000000,  2.6437904102
 ''', 
-#basis = 'ccpvdzd',
-basis = 'cc-pVDZ',
-symmetry = 'c2v',
+basis = 'ccpvdz',
+symmetry = 'C2v',
 )
 ##---------------------------------------------------------##
-            #Specify CC-Type#
+                #Specify CC-Type#
+       #Specific for the ground state calculation#
+       #Options are 'LCCD', 'CCSD', 'ICCSD', 
 ##---------------------------------------------------------##
 
-calc = 'ICCSD'
+calc = 'CCSD'
 
 ##---------------------------------------------------------##
                #Specify LRT-Type#
@@ -45,29 +45,36 @@ calc = 'ICCSD'
         #LR_type = 'CCSD' or 'None' for CCSD-LRT#
 ##---------------------------------------------------------##
 
-LR_type = 'iCCSD'
+LR_type = 'CCSD'
 
 ##---------------------------------------------------------##
-            #Specify convergence criteria#
+            #Specify convergence criteria ground state#
 ##---------------------------------------------------------##
 
-conv = 5
+conv = 7
 
 ##---------------------------------------------------------##
-             #Specify number of iteration#
+     #Specify convergence criteria for excited state#
 ##---------------------------------------------------------##
 
-n_iter = 40
+LR_conv = 5
 
 ##---------------------------------------------------------##
-          #Specify number of iteration for LRT#
+      #Specify max number of iteration for ground state#
 ##---------------------------------------------------------##
 
-lrt_iter = 50
+n_iter = 30
+
+##---------------------------------------------------------##
+          #Specify max number of iteration for LRT#
+##---------------------------------------------------------##
+
+lrt_iter = 60
 
 ##---------------------------------------------------------##
                       #Specify DIIS#
-              #If diis='TRUE'; it will run#
+     #If diis='TRUE'; max_diis needs to be specified#
+       #Specific for the ground state calculation#
 ##---------------------------------------------------------##
 
 diis = True
@@ -75,10 +82,11 @@ max_diis = 7
 
 ##---------------------------------------------------------##
          #Specify number of active orbitals#
+    #Currently same for both ground and excited states#
 ##---------------------------------------------------------##
 
-o_act = 2
-v_act = 2
+o_act = 1
+v_act = 1
 
 ##---------------------------------------------------------##
          #Specify number of frozen orbitals#
@@ -89,16 +97,20 @@ nfv = 0
 
 ##---------------------------------------------------------------------------##
      #Specify no of steps after which linear combination has to be taken#
+                       #Specific for LRT#
+                #This might need further testing#
 ##---------------------------------------------------------------------------##
 
-n_davidson = 40
+n_davidson = 80
 
 ##-----------------------------------------------------------------------##
-                     #Number of roots required#
+             #Number of roots required for each symmetry#
       #The ordering of the states for C2v group is A1,B1,B2,A2#
+      #The ordering for D2h group is Ag,B3u,B2u,B1g,B1u,B2g,B3g,Au#
+                       #Specific for LRT#
 ##-----------------------------------------------------------------------##
 
-nroot = [1,2,1,1]
+nroot = [3,2,0,1]
 
 
 
@@ -110,6 +122,12 @@ nroot = [1,2,1,1]
 Li  0.000000,  0.000000, -0.3797714041
 H   0.000000,  0.000000,  2.6437904102
 
+O   0.00000    0.0000    -0.2214314
+H   1.43043    0.0000     0.8857256
+H  -1.43043    0.0000     0.8857256
+
+! Experimental geometry
+! Taken from Li and Paldus Mol. Phys. Volume 104, 2006 
 O   0.000000   0.00000    0.1366052
 H   0.768958   0.00000   -0.5464208
 H  -0.768958   0.00000   -0.5464208
@@ -117,4 +135,20 @@ H  -0.768958   0.00000   -0.5464208
 C   0.00000   0.000000   0.00000
 H   0.00000   1.644403   1.32213
 H   0.00000   -1.644403  1.32213
+
+B   0.000000   0.00000    0.0000000
+H   0.000000   0.00000    2.3289000
+
+C	0.0000	0.0000	0.6695
+C	0.0000	0.0000	-0.6695
+H	0.0000	0.9289	1.2321
+H	0.0000	-0.9289	1.2321
+H	0.0000	0.9289	-1.2321
+H	0.0000	-0.9289	-1.2321
+
+H   0.000000   0.00000    0.0000000
+F   0.000000   0.00000    1.7328795
+
+C   0.000000   0.00000   -1.1740000
+C   0.000000   0.00000    1.1740000
 '''

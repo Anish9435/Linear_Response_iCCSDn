@@ -107,7 +107,7 @@ def doubles_response_linear(I_oo,I_vv,Ivvvv,Ioooo,Iovvo,Iovvo_2,Iovov,Iovov_2,t1
   gc.collect()
 
 ##-------------------------------------------------------------------------------------##
-                                  #Quadratic terms#
+                              #Quadratic terms#
 ##-------------------------------------------------------------------------------------##
 
 def doubles_response_quadratic(I_oo,I_vv,Ioooo,Iovvo,Iovvo_2,Iovov,t2):

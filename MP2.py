@@ -24,6 +24,8 @@ if nfo > 0:
   twoelecint_mo = cp.deepcopy(twoelecint_mo[nfo:,nfo:,nfo:,nfo:])
   hf_mo_E = cp.deepcopy(hf_mo_E[nfo:])
   Fock_mo = cp.deepcopy(Fock_mo[nfo:,nfo:])
+  nao = nao - nfo
+print hf_mo_E
 
 if nfv > 0:
   twoelecint_mo = cp.deepcopy(twoelecint_mo[:-nfv,:-nfv,:-nfv,:-nfv])
@@ -31,7 +33,6 @@ if nfv > 0:
   hf_mo_E = hf_mo_E[:-nfv]
   nao = nao - nfv - nfo
   virt = virt - nfv  
-
 
 D2 = np.zeros((occ,occ,virt,virt))
 t2 = np.zeros((occ,occ,virt,virt))
@@ -41,7 +42,6 @@ Do = np.zeros((occ,occ,virt,o_act))
 So = np.zeros((occ,occ,virt,o_act))
 Dv = np.zeros((occ,v_act,virt,virt))
 Sv = np.zeros((occ,v_act,virt,virt))
-print So.dtype.name
 
 for i in range(0,occ):
   for j in range(0,occ):
@@ -76,6 +76,7 @@ E_mp2 = 2*np.einsum('ijab,ijab',t2,twoelecint_mo[:occ,:occ,occ:nao,occ:nao]) - n
 print "MP2 correlation energy is : "+str(E_mp2)
 E_mp2_tot = E_hf + E_mp2
 print "MP2 energy is : "+str(E_mp2_tot)
+
 m = mp.MP2(trans_mo.mf)
 def check_mp2():
   if abs(m.kernel()[0]-E_mp2) <= 1E-6:

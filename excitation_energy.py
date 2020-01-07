@@ -25,6 +25,7 @@ import inp
 import MP2
 import trans_mo
 import intermediates
+import intermediates_response
 import amplitude
 import amplitude_response
 import cc_symmetrize
@@ -51,16 +52,16 @@ v_act = inp.v_act
 n_iter = inp.n_iter
 lrt_iter = inp.lrt_iter
 n_davidson = inp.n_davidson
-D1 = -1.0*MP2.D1
-D2 = -1.0*MP2.D2
+D1 = -2.0*MP2.D1
+D2 = -2.0*MP2.D2
 
 if (tiCCSD):
   So = main.So
   Sv = main.Sv
-  Do = -1.0*MP2.Do
-  Dv = -1.0*MP2.Dv
+  Do = -1.0*MP2.Do 
+  Dv = 1.0*MP2.Dv 
 
-conv = 10**(-inp.conv)
+conv = 1*(10**(-inp.LR_conv))
 
 sym = trans_mo.mol.symmetry
 orb_sym_pyscf = trans_mo.orb_symm
@@ -105,16 +106,16 @@ def calc_excitation_energy(isym, nroot):
 ##-----------------------------------------------------------------##
                       #Iteration begins#
 ##-----------------------------------------------------------------##
-  
+  print ("---------------------------------------------------------")
+  print ("               Molecular point group   "+str(sym))
+  print ("    Linear Response iteration begins for symmetry   "+str(isym))
+  print ("---------------------------------------------------------")
   for x in range(0,lrt_iter):
   
 ##-----------------------------------------------------------------##
               #conditioning with the remainder#
 ##-----------------------------------------------------------------##
   
-    print ("")
-    print ("")
-    print ("")
     print ("")
     print ("-------------------------------------------------")
     print ("          Iteration number "+str(x))
@@ -160,7 +161,7 @@ def calc_excitation_energy(isym, nroot):
 ##-----------------------------------------------------------------------------------------------------##
    
       # Diagrams and intermediates of coupled cluster theory i.e AX with new t and s-
-      I_vv, I_oo, Ivvvv, Ioooo, Iovvo, Iovvo_2, Iovov,Iovov_2 = intermediates.initialize() 
+      I_vv, I_oo, Ivvvv, Ioooo, Iovvo, Iovvo_2, Iovov,Iovov_2 = intermediates_response.initialize() 
   
 ##------------------------------------------------------------------------------------------------------##
                             # Linear terms of both R_ia and R_ijab
@@ -173,10 +174,10 @@ def calc_excitation_energy(isym, nroot):
                         #update and generation of the new intermediates
 ##------------------------------------------------------------------------------------------------------##
 
-      I1, I2 = intermediates.R_ia_intermediates(t1)
-      I1_new, I2_new = intermediates.R_ia_intermediates(dict_t1[r,iroot])  
-      I_oo,I_vv,Ioooo,Iovvo,Iovvo_2,Iovov = intermediates.update_int_response(t2,I_vv,I_oo,Ioooo,Iovvo,Iovvo_2,Iovov)
-      I_oo_new,I_vv_new,Ioooo_new,Iovvo_new,Iovvo_2_new,Iovov_new = intermediates.update_int_response(dict_t2[r,iroot],I_vv,I_oo,Ioooo,Iovvo,Iovvo_2,Iovov)
+      I1, I2 = intermediates_response.R_ia_intermediates(t1)
+      I1_new, I2_new = intermediates_response.R_ia_intermediates(dict_t1[r,iroot])  
+      I_oo,I_vv,Ioooo,Iovvo,Iovvo_2,Iovov = intermediates_response.update_int_response(t2,I_vv,I_oo,Ioooo,Iovvo,Iovvo_2,Iovov)
+      I_oo_new,I_vv_new,Ioooo_new,Iovvo_new,Iovvo_2_new,Iovov_new = intermediates_response.update_int_response(dict_t2[r,iroot],I_vv,I_oo,Ioooo,Iovvo,Iovvo_2,Iovov)
   
 ##-------------------------------------------------------------------------------------------------------##
                                       #one body diagrams#
@@ -199,8 +200,8 @@ def calc_excitation_energy(isym, nroot):
                                #Further update of the intermdiates#
 ##---------------------------------------------------------------------------------------------------------##
   
-      I_oo,I_vv,I_oovo,I_vovv,Ioooo_2,I_voov,Iovov_3,Iovvo_3,Iooov,I3 = intermediates.singles_intermediates(t1,t2,I_oo,I_vv,I2)
-      I_oo_new,I_vv_new,I_oovo_new,I_vovv_new,Ioooo_2_new,I_voov_new,Iovov_3_new,Iovvo_3_new,Iooov_new,I3_new = intermediates.singles_intermediates(dict_t1[r,iroot],dict_t2[r,iroot],I_oo_new,I_vv_new,I2_new)
+      I_oo,I_vv,I_oovo,I_vovv = intermediates_response.singles_intermediates_response(t1,t2,I_oo,I_vv)
+      I_oo_new,I_vv_new,I_oovo_new,I_vovv_new = intermediates_response.singles_intermediates_response(dict_t1[r,iroot],dict_t2[r,iroot],I_oo_new,I_vv_new)
   
 ##---------------------------------------------------------------------------------------------------------##
                                       #two body diagrams#
@@ -226,10 +227,10 @@ def calc_excitation_energy(isym, nroot):
 ##----------------------------------------------------------------------------------------------------------##
 
       if (tiCCSD):
-        II_oo = intermediates.W1_int_So(So)
-        II_oo_new = intermediates.W1_int_So(dict_So[r,iroot])
-        II_vv = intermediates.W1_int_Sv(Sv)
-        II_vv_new = intermediates.W1_int_Sv(dict_Sv[r,iroot])
+        II_oo = intermediates_response.W1_int_So(So)
+        II_oo_new = intermediates_response.W1_int_So(dict_So[r,iroot])
+        II_vv = intermediates_response.W1_int_Sv(Sv)
+        II_vv_new = intermediates_response.W1_int_Sv(dict_Sv[r,iroot])
   
 ##----------------------------------------------------------------------------------------------------------##
                                    #A_lambda So and Sv sector#
@@ -239,6 +240,7 @@ def calc_excitation_energy(isym, nroot):
         dict_Y_ijab[r,iroot] += amplitude_response.inserted_diag_So(t2,II_oo_new)
         dict_Y_ijab[r,iroot] += amplitude_response.inserted_diag_Sv(dict_t2[r,iroot],II_vv)
         dict_Y_ijab[r,iroot] += amplitude_response.inserted_diag_Sv(t2,II_vv_new)
+
       dict_Y_ijab[r,iroot] = cc_symmetrize.symmetrize(dict_Y_ijab[r,iroot])
         
 ##----------------------------------------------------------------------------------------------------------##
@@ -247,17 +249,26 @@ def calc_excitation_energy(isym, nroot):
       
       if (tiCCSD):
         dict_Y_iuab[r,iroot] = amplitude_response.Sv_diagram_vs_contraction_response(dict_Sv[r,iroot])
+
+    ##----------The following two diagrams are causing trouble-----------------------##
+
         dict_Y_iuab[r,iroot] += amplitude_response.Sv_diagram_vt_contraction_response(dict_t2[r,iroot])
-        dict_Y_iuab[r,iroot] += amplitude_response.T1_contribution_Sv_response(dict_t1[r,iroot])
+        dict_Y_iuab[r,iroot] = amplitude_response.T1_contribution_Sv_response(dict_t1[r,iroot])
   
 ##----------------------------------------------------------------------------------------------------------##
                                       #A_kappa So and T sector# 
 ##----------------------------------------------------------------------------------------------------------##
   
         dict_Y_ijav[r,iroot] = amplitude_response.So_diagram_vs_contraction_response(dict_So[r,iroot])
+
+     ##----------The following two diagrams are NOT causing trouble----------------------##
+     ##------------However, they are excluded to treat the entire ----------------##
+     ##---------------kappa-T sector in the same footing-----------##
+
         dict_Y_ijav[r,iroot] += amplitude_response.So_diagram_vt_contraction_response(dict_t2[r,iroot])
         dict_Y_ijav[r,iroot] += amplitude_response.T1_contribution_So_response(dict_t1[r,iroot])
-      
+    
+
 ##----------------------------------------------------------------------------------##
                          #Construction of full B matrix#
 ##----------------------------------------------------------------------------------##
@@ -338,26 +349,59 @@ def calc_excitation_energy(isym, nroot):
 ##-------------------------------------------------------------------------------------##
                           #Diagonalization of the B matrix#
 ##-------------------------------------------------------------------------------------##
-        
+
     w_total, vects_total = np.linalg.eig(B_total)
+    
     
     if (np.all(w_total).imag <= 1e-8):
       w_total = w_total.real    
-  
+
 ##--------------------------------------------------------------------------------------##
-               #Calculation of multiple sorted eigenvalue as#
-              #well as the coeff matrix corresponding to that#
+                 #Calculation of multiple sorted eigenvalue as#
+                #well as the coeff matrix corresponding to that#
 ##--------------------------------------------------------------------------------------##
-  
+
     dict_coeff_total = {}
     w = []
-  
-    for iroot in range(0,nroot):
-      ind_min_wtotal = np.argmin(w_total)                          #to calculate the minimum eigenvalue from the entire spectrum
-      dict_coeff_total[iroot] = vects_total[:,ind_min_wtotal].real  #to calculate the coeff matrix from eigen function corresponding to lowest eigen value
-      w.append(w_total[ind_min_wtotal])
-      w_total[ind_min_wtotal] = 123.456
- 
+
+##-----------------------------------------------------------------------------------------------------------##
+    #for the first iteration the lowest eigen value is chosen but for the subsequent iterations#
+    #the desired eigenvalue is guided by the highest overlap of the vectors of a given root with# 
+                              #that of the previous iterations#
+##-----------------------------------------------------------------------------------------------------------##
+
+##--------------------------------------------------------------------------------------##
+       #choosing the lowest eigenvalues and eigen vectors of Zeroth iteration#
+##--------------------------------------------------------------------------------------##
+
+    if(x == 0):
+      dict_v_nth = {}
+      for iroot in range(0,nroot):
+        ind_min_wtotal = np.argmin(w_total)                          #to calculate the minimum eigenvalue location from the entire spectrum
+        dict_coeff_total[iroot] = vects_total[:,ind_min_wtotal].real  #to calculate the coeff matrix from eigen function corresponding to lowest eigen value
+        dict_v_nth[iroot] = dict_coeff_total[iroot]
+        w.append(w_total[ind_min_wtotal])
+        w_total[ind_min_wtotal] = 123.456
+
+##--------------------------------------------------------------------------------------##
+       #choosing the eigen vectors having highest overlap with previous#
+                            #iteration vectors#
+##--------------------------------------------------------------------------------------##
+
+    if(x>0):
+      S_k = {}
+      for iroot in range(0,nroot):
+        S_k[iroot] = np.zeros((len(w_total)))
+        for k in range(0,len(w_total)):
+          m = w_total.argsort()[k]
+          vect_mth = vects_total[:,m].real
+          S_k[iroot][m] = np.abs(np.linalg.multi_dot([dict_v_nth[iroot][:],vect_mth[:x*nroot]]))
+
+        b = np.argmax(S_k[iroot])
+        w.append(w_total[b])
+        dict_coeff_total[iroot] = vects_total[:,b].real 
+        dict_v_nth[iroot] = dict_coeff_total[iroot]
+
 ##------------------------------------------------------------------------------##
      #Linear Combination of X i.e. t1,t2,So and Sv to form updated vector#
 ##------------------------------------------------------------------------------##
@@ -463,8 +507,11 @@ def calc_excitation_energy(isym, nroot):
 ##---------------------------------------------------------------------------##
 
       print ("             ------------------------")
-      print 'EPS for IROOT :',iroot, '  IS: ', eps_t[iroot] 
-      print 'Eigenvalue for IROOT :',iroot, '  IS:  ', w[iroot]
+      if (tiCCSD):
+        print 'EPS for IROOT :',iroot+1, '  IS: ', eps_t[iroot], eps_So[iroot], eps_Sv[iroot] 
+      else:
+        print 'EPS for IROOT :',iroot+1, '  IS: ', eps_t[iroot] 
+      print 'Eigenvalue for IROOT :',iroot+1, '  IS:  ', w[iroot], ' a.u. ', w[iroot]*27.2113839, ' eV'
       print ("             ------------------------")
 
 
@@ -590,7 +637,7 @@ def calc_excitation_energy(isym, nroot):
       if (tiCCSD):
         dict_So[r+1,iroot] = dict_norm_So[iroot]
         dict_Sv[r+1,iroot] = dict_norm_Sv[iroot]
-  
+ 
 ##----------------------------------------------------------------------------##
                     #Sanity check to find the final norm#
 ##----------------------------------------------------------------------------##
