@@ -1,4 +1,16 @@
-# Import modules
+
+                   ##----------------------------------------------------------------------------------------------------------------##
+                                   
+                                             # Routine to calculate the ground state Coupled cluster energy #
+                                                # Author: Soumi Tribedi, Anish Chakraborty, Rahul Maitra #
+                                                                  # Date - 10th Dec, 2019 # 
+
+                   ##----------------------------------------------------------------------------------------------------------------##
+
+##--------------------------------------------------##
+          #Import important modules#
+##--------------------------------------------------##
+
 import numpy as np
 import copy as cp
 import trans_mo
@@ -11,10 +23,17 @@ import cc_symmetrize
 import cc_update
 
 mol = inp.mol
-# Obtain the number of atomic orbitals in the basis set
+
+##------------------------------------------------------------------------##
+        #Obtain the number of atomic orbitals in the basis set#
+##------------------------------------------------------------------------##
+
 nao = MP2.nao
 
-# import important stuff
+##--------------------------------------------------##
+          #Import important parameters#
+##--------------------------------------------------##
+
 E_hf = trans_mo.E_hf
 Fock_mo = MP2.Fock_mo
 twoelecint_mo = MP2.twoelecint_mo 
@@ -36,7 +55,10 @@ max_diis = inp.max_diis
 nfo = MP2.nfo
 nfv = MP2.nfv
 
-#    Evaluate the energy
+##----------------------------------------------------------------------------------------##
+                   #calculation of CCSD, iCCSDn and iCCSDn-PT energies#
+##----------------------------------------------------------------------------------------##
+
 def energy_ccd(t2):
   E_ccd = 2*np.einsum('ijab,ijab',t2,twoelecint_mo[:occ,:occ,occ:nao,occ:nao]) - np.einsum('ijab,ijba',t2,twoelecint_mo[:occ,:occ,occ:nao,occ:nao])
   return E_ccd
@@ -45,6 +67,10 @@ def energy_ccsd(t1,t2):
   E_ccd = energy_ccd(t2)
   E_ccd += 2*np.einsum('ijab,ia,jb',twoelecint_mo[:occ,:occ,occ:nao,occ:nao],t1,t1) - np.einsum('ijab,ib,ja',twoelecint_mo[:occ,:occ,occ:nao,occ:nao],t1,t1)
   return E_ccd
+
+##----------------------------------------------------------------------------------------##
+                  #Convergence check for the ground state iteration#
+##----------------------------------------------------------------------------------------##
 
 def convergence_I(E_ccd,E_old,eps_t,eps_So,eps_Sv):
   del_E = E_ccd - E_old
@@ -75,7 +101,10 @@ def convergence(E_ccd,E_old,eps):
     print "energy : "+str(E_hf + E_ccd)
     return False
 
-### Setup DIIS
+##---------------------------------------------------------------------------##
+                            #Setup DIIS#
+##---------------------------------------------------------------------------##
+
 if inp.diis == True:
   diis_vals_t2, diis_errors_t2 = diis.DIIS_ini(t2)
   diis_errors = []
@@ -85,8 +114,16 @@ if inp.diis == True:
     diis_vals_So, diis_errors_So = diis.DIIS_ini(So)
     diis_vals_Sv, diis_errors_Sv = diis.DIIS_ini(Sv)
 
+##---------------------------------------------------------------------------##
+                            #Begin iteration#
+##---------------------------------------------------------------------------##
+
 for x in range(0,n_iter):
-  #t2 = np.zeros((occ,occ,virt,virt))
+
+##---------------------------------------------------------------------------##
+                    #Calculation for LCCD method#
+##---------------------------------------------------------------------------##
+
   if calc == 'LCCD':
     print "-----------LCCD-------------"
     I_vv, I_oo, Ivvvv, Ioooo, Iovvo, Iovvo_2, Iovov,Iovov_2 = intermediates.initialize()
@@ -120,6 +157,11 @@ for x in range(0,n_iter):
       error_t2, diis_vals_t2 = diis.errors(t2,oldt2,diis_vals_t2)
       # Build new error vector
       diis_errors.append((error_t2))
+
+##---------------------------------------------------------------------------##
+                    #Calculation for CCD method#
+##---------------------------------------------------------------------------##
+
   if calc == 'CCD':
     print "-----------CCD------------"
     I_vv, I_oo, Ivvvv, Ioooo, Iovvo, Iovvo_2, Iovov,Iovov_2 = intermediates.initialize()
@@ -154,6 +196,10 @@ for x in range(0,n_iter):
       error_t2, diis_vals_t2 = diis.errors(t2,oldt2,diis_vals_t2)
       # Build new error vector
       diis_errors.append((error_t2))
+
+##---------------------------------------------------------------------------##
+                    #Calculation for CCSD method#
+##---------------------------------------------------------------------------##
 
   if calc == 'CCSD':
     print "-----------CCSD------------"
@@ -205,6 +251,10 @@ for x in range(0,n_iter):
       # Build new error vector
       diis_errors.append(np.concatenate((error_t1,error_t2)))
 
+##---------------------------------------------------------------------------##
+                    #Calculation for iCCSDn method#
+##---------------------------------------------------------------------------##
+
   if calc == 'ICCSD':
     print "----------ICCSD------------"
     tau = cp.deepcopy(t2)
@@ -221,17 +271,18 @@ for x in range(0,n_iter):
     I_oo,I_vv,I_oovo,I_vovv,Ioooo_2,I_voov,Iovov_3,Iovvo_3,Iooov,I3=intermediates.singles_intermediates(t1,t2,I_oo,I_vv,I2)
     R_ijab = amplitude.doubles(I_oo,I_vv,Ivvvv,Ioooo,Iovvo,Iovvo_2,Iovov,Iovov_2,tau,t2)
     R_ijab += amplitude.singles_n_doubles(t1,I_oovo,I_vovv) 
-    #R_ijab += amplitude.higher_order(t1,t2,Iovov_3,Iovvo_3,Iooov,I3,Ioooo_2,I_voov)
+    R_ijab += amplitude.higher_order(t1,t2,Iovov_3,Iovvo_3,Iooov,I3,Ioooo_2,I_voov)
     R_ijab += amplitude.inserted_diag_So(t2,II_oo) 
     R_ijab += amplitude.inserted_diag_Sv(t2,II_vv) 
     R_ijab = cc_symmetrize.symmetrize(R_ijab)
     
     R_iuab = amplitude.Sv_diagram_vs_contraction(Sv,II_vv)
     R_iuab += amplitude.Sv_diagram_vt_contraction(t2)
-    #R_iuab += amplitude.T1_contribution_Sv(t1)
+    R_iuab += amplitude.T1_contribution_Sv(t1)
+
     R_ijav = amplitude.So_diagram_vs_contraction(So,II_oo)
     R_ijav += amplitude.So_diagram_vt_contraction(t2)
-    #R_ijav += amplitude.T1_contribution_So(t1)
+    R_ijav += amplitude.T1_contribution_So(t1)
     
     oldt2 = t2.copy()
     oldt1 = t1.copy()
@@ -284,6 +335,10 @@ for x in range(0,n_iter):
       diis_errors_So.append((error_So))
       diis_errors_Sv.append((error_Sv))
 
+##---------------------------------------------------------------------------##
+                 #Calculation for iCCSDn-PT method#
+##---------------------------------------------------------------------------##
+
   if calc == 'ICCSD-PT':
     print "----------ICCSD-PT------------"
     tau = cp.deepcopy(t2)
@@ -333,3 +388,7 @@ for x in range(0,n_iter):
       error_t2, diis_vals_t2 = diis.errors(t2,oldt2,diis_vals_t2)
       # Build new error vector
       diis_errors.append(np.concatenate((error_t1,error_t2)))
+
+                    ##----------------------------------------------------------------------------------------------------------------------------------------##
+                                                                                           #THE END#
+                    ##----------------------------------------------------------------------------------------------------------------------------------------##

@@ -121,7 +121,7 @@ def koopmann_spectrum_sym_doub(occ,virt,o_act,v_act, orb_sym, isym):
 ##---------------------------------------------------------------------##
 
 tiCCSD = False
-if inp.LR_type == 'iCCSD':
+if inp.LR_type == 'ICCSD':
   tiCCSD = True
 
 ##--------------------------------------------------------------------------------##

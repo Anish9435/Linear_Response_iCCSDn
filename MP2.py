@@ -1,11 +1,28 @@
+
+                   ##----------------------------------------------------------------------------------------------------------------##
+                                   
+                                             # Routine to calculate MP2 energy and verify with pyscf routine #
+                                                # Author: Soumi Tribedi, Anish Chakraborty, Rahul Maitra #
+                                                                  # Date - 10th Dec, 2019 # 
+
+                   ##----------------------------------------------------------------------------------------------------------------##
+
+##--------------------------------------------------##
+          #Import important modules#
+##--------------------------------------------------##
+
 import numpy as np
 import trans_mo
 import inp
 import gc
 import copy as cp
-
+import sys
 from pyscf import mp
-#     Setup t2 and D
+
+##--------------------------------------------------##
+          #Import important parameters#
+##--------------------------------------------------##
+
 n = trans_mo.n
 nao = trans_mo.nao
 o_act = inp.o_act
@@ -19,13 +36,16 @@ nfo = inp.nfo
 nfv = inp.nfv
 twoelecint_mo = np.swapaxes(trans_mo.twoelecint_mo,1,2)  #physicist notation
 
+##----------------------------------------------------------------------##
+                  #module for the frozen orbitals#
+##----------------------------------------------------------------------##
+
 if nfo > 0:
   occ = occ - nfo
   twoelecint_mo = cp.deepcopy(twoelecint_mo[nfo:,nfo:,nfo:,nfo:])
   hf_mo_E = cp.deepcopy(hf_mo_E[nfo:])
   Fock_mo = cp.deepcopy(Fock_mo[nfo:,nfo:])
   nao = nao - nfo
-print hf_mo_E
 
 if nfv > 0:
   twoelecint_mo = cp.deepcopy(twoelecint_mo[:-nfv,:-nfv,:-nfv,:-nfv])
@@ -33,6 +53,10 @@ if nfv > 0:
   hf_mo_E = hf_mo_E[:-nfv]
   nao = nao - nfv - nfo
   virt = virt - nfv  
+
+##----------------------------------------------------------------------##
+                  #Set up the denominator and t/s#
+##----------------------------------------------------------------------##
 
 D2 = np.zeros((occ,occ,virt,virt))
 t2 = np.zeros((occ,occ,virt,virt))
@@ -71,11 +95,18 @@ if inp.calc == 'ICCD' or inp.calc == 'ILCCD' or inp.calc == 'ICCSD' or inp.calc 
           Do[i,j,a,k-occ+o_act] =  hf_mo_E[i] + hf_mo_E[j] - hf_mo_E[a+occ] + hf_mo_E[k]
           So[i,j,a,k-occ+o_act] = twoelecint_mo[i,j,a+occ,k]/Do[i,j,a,k-occ+o_act]
 
-#      Calculate MP2 energy
+##-------------------------------------------------------------------------------------##
+                          #Calculation of MP2 energy#
+##-------------------------------------------------------------------------------------##
+
 E_mp2 = 2*np.einsum('ijab,ijab',t2,twoelecint_mo[:occ,:occ,occ:nao,occ:nao]) - np.einsum('ijab,ijba',t2,twoelecint_mo[:occ,:occ,occ:nao,occ:nao])
 print "MP2 correlation energy is : "+str(E_mp2)
 E_mp2_tot = E_hf + E_mp2
 print "MP2 energy is : "+str(E_mp2_tot)
+
+##-------------------------------------------------------------------------------------##
+                          #Verify with pyscf routine#
+##-------------------------------------------------------------------------------------##
 
 m = mp.MP2(trans_mo.mf)
 def check_mp2():
@@ -85,3 +116,6 @@ def check_mp2():
 
 check_mp2()
 gc.collect()
+                          ##-----------------------------------------------------------------------------------------------------------------------##
+                                                                                    #THE END#
+                          ##-----------------------------------------------------------------------------------------------------------------------##

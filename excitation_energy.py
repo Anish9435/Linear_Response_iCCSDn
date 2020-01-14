@@ -39,7 +39,7 @@ import math
 ##---------------------------------------------------------------------------##
 
 tiCCSD = False
-if inp.LR_type == 'iCCSD':
+if inp.LR_type == 'ICCSD':
   tiCCSD = True
 
 t1 = main.t1
@@ -52,13 +52,13 @@ v_act = inp.v_act
 n_iter = inp.n_iter
 lrt_iter = inp.lrt_iter
 n_davidson = inp.n_davidson
-D1 = -2.0*MP2.D1
-D2 = -2.0*MP2.D2
+D1 = 1.0*MP2.D1
+D2 = 1.0*MP2.D2
 
 if (tiCCSD):
   So = main.So
   Sv = main.Sv
-  Do = -1.0*MP2.Do 
+  Do = 1.0*MP2.Do 
   Dv = 1.0*MP2.Dv 
 
 conv = 1*(10**(-inp.LR_conv))
@@ -187,8 +187,8 @@ def calc_excitation_energy(isym, nroot):
       dict_Y_ia[r,iroot] += amplitude_response.singles_response_quadratic(I_oo_new,I_vv_new,I1_new,I2_new,t1,t2)
   
       dict_Y_ia[r,iroot] += -2*np.einsum('ibkj,ka,jb->ia',twoelecint_mo[:occ,occ:nao,:occ,:occ],t1,dict_t1[r,iroot])       #diagram non-linear a
-      dict_Y_ia[r,iroot] +=  2*np.einsum('cbaj,ic,jb->ia',twoelecint_mo[occ:nao,occ:nao,occ:nao,:occ],t1,dict_t1[r,iroot]) #diagram non-linear b
-      dict_Y_ia[r,iroot] +=  np.einsum('ibjk,ka,jb->ia',twoelecint_mo[:occ,occ:nao,:occ,:occ],t1,dict_t1[r,iroot])         #diagram non-linear c
+      dict_Y_ia[r,iroot] +=  2*np.einsum('cbaj,ic,jb->ia',twoelecint_mo[occ:nao,occ:nao,occ:nao,:occ],t1,dict_t1[r,iroot]) #diagram non-linear c
+      dict_Y_ia[r,iroot] +=  np.einsum('ibjk,ka,jb->ia',twoelecint_mo[:occ,occ:nao,:occ,:occ],t1,dict_t1[r,iroot])         #diagram non-linear b
       dict_Y_ia[r,iroot] += -np.einsum('cbja,ic,jb->ia',twoelecint_mo[occ:nao,occ:nao,:occ,occ:nao],t1,dict_t1[r,iroot])   #diagram non-linear d
     
       dict_Y_ia[r,iroot] += -2*np.einsum('ibkj,ka,jb->ia',twoelecint_mo[:occ,occ:nao,:occ,:occ],dict_t1[r,iroot],t1)
@@ -236,6 +236,11 @@ def calc_excitation_energy(isym, nroot):
                                    #A_lambda So and Sv sector#
 ##----------------------------------------------------------------------------------------------------------##
 
+        #dict_Y_ia[r,iroot] += amplitude_response.inserted_diag_So_t1(dict_t1[r,iroot],II_oo)
+        #dict_Y_ia[r,iroot] += amplitude_response.inserted_diag_So_t1(t1,II_oo_new)
+        #dict_Y_ia[r,iroot] += amplitude_response.inserted_diag_Sv_t1(dict_t1[r,iroot],II_vv)
+        #dict_Y_ia[r,iroot] += amplitude_response.inserted_diag_Sv_t1(t1,II_vv_new)
+
         dict_Y_ijab[r,iroot] += amplitude_response.inserted_diag_So(dict_t2[r,iroot],II_oo)
         dict_Y_ijab[r,iroot] += amplitude_response.inserted_diag_So(t2,II_oo_new)
         dict_Y_ijab[r,iroot] += amplitude_response.inserted_diag_Sv(dict_t2[r,iroot],II_vv)
@@ -250,20 +255,14 @@ def calc_excitation_energy(isym, nroot):
       if (tiCCSD):
         dict_Y_iuab[r,iroot] = amplitude_response.Sv_diagram_vs_contraction_response(dict_Sv[r,iroot])
 
-    ##----------The following two diagrams are causing trouble-----------------------##
-
         dict_Y_iuab[r,iroot] += amplitude_response.Sv_diagram_vt_contraction_response(dict_t2[r,iroot])
-        dict_Y_iuab[r,iroot] = amplitude_response.T1_contribution_Sv_response(dict_t1[r,iroot])
+        dict_Y_iuab[r,iroot] += amplitude_response.T1_contribution_Sv_response(dict_t1[r,iroot])
   
 ##----------------------------------------------------------------------------------------------------------##
                                       #A_kappa So and T sector# 
 ##----------------------------------------------------------------------------------------------------------##
   
         dict_Y_ijav[r,iroot] = amplitude_response.So_diagram_vs_contraction_response(dict_So[r,iroot])
-
-     ##----------The following two diagrams are NOT causing trouble----------------------##
-     ##------------However, they are excluded to treat the entire ----------------##
-     ##---------------kappa-T sector in the same footing-----------##
 
         dict_Y_ijav[r,iroot] += amplitude_response.So_diagram_vt_contraction_response(dict_t2[r,iroot])
         dict_Y_ijav[r,iroot] += amplitude_response.T1_contribution_So_response(dict_t1[r,iroot])
@@ -355,6 +354,7 @@ def calc_excitation_energy(isym, nroot):
     
     if (np.all(w_total).imag <= 1e-8):
       w_total = w_total.real    
+    print w_total
 
 ##--------------------------------------------------------------------------------------##
                  #Calculation of multiple sorted eigenvalue as#
@@ -374,8 +374,9 @@ def calc_excitation_energy(isym, nroot):
        #choosing the lowest eigenvalues and eigen vectors of Zeroth iteration#
 ##--------------------------------------------------------------------------------------##
 
-    if(x == 0):
+    if(r == 0):
       dict_v_nth = {}
+
       for iroot in range(0,nroot):
         ind_min_wtotal = np.argmin(w_total)                          #to calculate the minimum eigenvalue location from the entire spectrum
         dict_coeff_total[iroot] = vects_total[:,ind_min_wtotal].real  #to calculate the coeff matrix from eigen function corresponding to lowest eigen value
@@ -388,20 +389,20 @@ def calc_excitation_energy(isym, nroot):
                             #iteration vectors#
 ##--------------------------------------------------------------------------------------##
 
-    if(x>0):
+    if(r>0):
       S_k = {}
       for iroot in range(0,nroot):
         S_k[iroot] = np.zeros((len(w_total)))
         for k in range(0,len(w_total)):
           m = w_total.argsort()[k]
           vect_mth = vects_total[:,m].real
-          S_k[iroot][m] = np.abs(np.linalg.multi_dot([dict_v_nth[iroot][:],vect_mth[:x*nroot]]))
+          S_k[iroot][m] = np.abs(np.linalg.multi_dot([dict_v_nth[iroot][:],vect_mth[:r*nroot]]))
 
         b = np.argmax(S_k[iroot])
         w.append(w_total[b])
         dict_coeff_total[iroot] = vects_total[:,b].real 
         dict_v_nth[iroot] = dict_coeff_total[iroot]
-
+  
 ##------------------------------------------------------------------------------##
      #Linear Combination of X i.e. t1,t2,So and Sv to form updated vector#
 ##------------------------------------------------------------------------------##
@@ -524,14 +525,14 @@ def calc_excitation_energy(isym, nroot):
 ##---------------------------------------------------------------------------##
                         #Calculation of new X#
 ##---------------------------------------------------------------------------##
-  
+
     dict_t1_2 = {}
     dict_t2_2 = {}
 
     if (tiCCSD):
       dict_So_2 = {}
       dict_Sv_2 = {}                     #to get new vector X; (X=R/D-w)
-  
+
     for iroot in range(0,nroot):
       dict_t1_2[iroot] = davidson.get_XO(dict_R_ia[r,iroot],D1,w[iroot])
       dict_t2_2[iroot] = davidson.get_XO(dict_R_ijab[r,iroot],D2,w[iroot])

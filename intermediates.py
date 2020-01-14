@@ -1,4 +1,16 @@
-# Import modules
+
+                   ##----------------------------------------------------------------------------------------------------------------##
+                                   
+                                           # Routine to calculate Hatree-Fock energy and verify with pyscf routine #
+                                                # Author: Soumi Tribedi, Anish Chakraborty, Rahul Maitra #
+                                                                  # Date - 10th Dec, 2019 # 
+
+                   ##----------------------------------------------------------------------------------------------------------------##
+
+##--------------------------------------------------##
+          #Import important modules#
+##--------------------------------------------------##
+
 import gc
 import numpy as np
 import copy as cp
@@ -8,19 +20,27 @@ import inp
 
 mol = inp.mol
 
-# import important stuff
+##--------------------------------------------------##
+          #Import important parameters#
+##--------------------------------------------------##
+
 twoelecint_mo = MP2.twoelecint_mo 
 Fock_mo = MP2.Fock_mo
 occ = MP2.occ
 virt = MP2.virt
 nao = MP2.nao
  
-#      active orbital numbers imported from input file
+##--------------------------------------------------##
+            #Number of active orbitals#
+##--------------------------------------------------##
+
 o_act = inp.o_act
 v_act = inp.v_act
 act = o_act + v_act
 
-##--------Initialize intermediates for linear terms in CCD. LCCD is the default calculation------##
+##----------------------------------------------------------------------------------------------##
+      #Initialize intermediates for linear terms in CCD. LCCD is the default calculation#
+##----------------------------------------------------------------------------------------------##
 
 def initialize():
   I_vv = cp.deepcopy(Fock_mo[occ:nao,occ:nao])
@@ -32,6 +52,7 @@ def initialize():
   Iovov = cp.deepcopy(twoelecint_mo[:occ,occ:nao,:occ,occ:nao])
   Iovov_2 = cp.deepcopy(twoelecint_mo[:occ,occ:nao,:occ,occ:nao])
   return I_vv, I_oo, Ivvvv, Ioooo, Iovvo, Iovvo_2, Iovov, Iovov_2
+
   I_vv = None
   I_oo = None
   Ivvvv = None
@@ -44,13 +65,14 @@ def initialize():
   I_vovv = None
   gc.collect()
 
-  
-##--------Introducing the non-linear doubles terms-----------##
+##----------------------------------------------------------------------------------------------##
+                       #Introducing the non-linear doubles terms#
+##----------------------------------------------------------------------------------------------##
 
 def update_int(tau,t2,I_vv,I_oo,Ioooo,Iovvo,Iovvo_2,Iovov):
   I_vv += -2*np.einsum('cdkl,klad->ca',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t2) + np.einsum('cdkl,klda->ca',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t2)
 
-  I_oo += 2*np.einsum('cdkl,ilcd->ik',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],tau) - np.einsum('dckl,lidc->ik',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],tau) ##t2 should be changed to tau here
+  I_oo += 2*np.einsum('cdkl,ilcd->ik',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],tau) - np.einsum('dckl,lidc->ik',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],tau) 
 
   Ioooo += np.einsum('cdkl,ijcd->ijkl',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t2)
 
@@ -59,8 +81,8 @@ def update_int(tau,t2,I_vv,I_oo,Ioooo,Iovvo,Iovvo_2,Iovov):
   Iovvo_2 += -0.5*np.einsum('dclk,jldb->jcbk',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t2)  - np.einsum('dckl,ljdb->jcbk',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t2)
  
   Iovov += -0.5*np.einsum('dckl,ildb->ickb',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t2)
-  
   return I_oo,I_vv,Ioooo,Iovvo,Iovvo_2,Iovov
+
   I_vv = None
   I_oo = None
   Iovvo = None
@@ -69,7 +91,9 @@ def update_int(tau,t2,I_vv,I_oo,Ioooo,Iovvo,Iovvo_2,Iovov):
   gc.collect()
   
 
-##-------Creating intermediates involving S which will lead to diagrams in R_ijab-------##
+##----------------------------------------------------------------------------------------------##
+         #Creating intermediates involving S which will lead to diagrams in R_ijab##
+##----------------------------------------------------------------------------------------------##
 
 def W1_int_So(So):
   II_oo = np.zeros((occ,occ)) 
@@ -88,6 +112,7 @@ def R_ia_intermediates(t1):
   I1 = 2*np.einsum('cbkj,kc->bj',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t1)
   I2 = -np.einsum('cbjk,kc->bj',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t1)
   return I1,I2
+
   I1 = None
   I2 = None
   
@@ -125,8 +150,8 @@ def singles_intermediates(t1,t2,I_oo,I_vv,I2):
   Iovvo_3 += -np.einsum('iclk,la->icak',twoelecint_mo[:occ,occ:nao,:occ,:occ],t1)  #intermediate for diagram 30
   
   I3 = -np.einsum('cdkl,ic,ka->idal',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t1,t1)  #intermediate for diagram 40
-
   return I_oo, I_vv, I_oovo, I_vovv, Ioooo_2, I_voov, Iovov_3, Iovvo_3, Iooov, I3
+
   I_vv = None
   I_oo = None
   I_oovo = None
@@ -140,19 +165,9 @@ def singles_intermediates(t1,t2,I_oo,I_vv,I2):
   gc.collect()
   
 
-def norm_response_So(So):
-  norm_oo = np.zeros((occ,occ))  
-  norm_oo[occ-o_act:occ,occ-o_act:occ] += 0.25*(-2.0*np.einsum('ijau,ijav->uv',So,So) + np.einsum('ijau,jiav->uv',So,So))  
-  return norm_oo
-  norm_oo = None
-  gc.collect
-
-def norm_response_Sv(Sv):
-  norm_vv = np.zeros((virt,virt))  
-  norm_vv[:v_act,:v_act] += 0.25*(2.0*np.einsum('iyab,iwab->yw',Sv,Sv) - np.einsum('iyab,iwba->yw',Sv,Sv))
-  return norm_vv
-  norm_vv = None
-  gc.collect
+                          ##-----------------------------------------------------------------------------------------------------------------------##
+                                                                                    #THE END#
+                          ##-----------------------------------------------------------------------------------------------------------------------##
 
 
 
