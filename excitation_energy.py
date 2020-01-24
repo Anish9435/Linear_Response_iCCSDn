@@ -61,7 +61,12 @@ if (tiCCSD):
   Do = 1.0*MP2.Do 
   Dv = 1.0*MP2.Dv 
 
-conv = 1*(10**(-inp.LR_conv))
+#print 'D1', D1
+#print 'D2', D2
+#print 'Do', Do
+#print 'Dv', Dv
+
+conv = 5*(10**(-inp.LR_conv))
 
 sym = trans_mo.mol.symmetry
 orb_sym_pyscf = trans_mo.orb_symm
@@ -231,7 +236,17 @@ def calc_excitation_energy(isym, nroot):
         II_oo_new = intermediates_response.W1_int_So(dict_So[r,iroot])
         II_vv = intermediates_response.W1_int_Sv(Sv)
         II_vv_new = intermediates_response.W1_int_Sv(dict_Sv[r,iroot])
-  
+
+        II_vo = intermediates_response.coupling_terms_Sv_response(Sv)
+        II_vo_new = intermediates_response.coupling_terms_Sv_response(dict_Sv[r,iroot])
+        II_ov = intermediates_response.coupling_terms_So_response(So)
+        II_ov_new = intermediates_response.coupling_terms_So_response(dict_So[r,iroot])
+ 
+        II_ovoo,II_ovoo3,II_vvvo3 = intermediates_response.w2_int_So_response(So)
+        II_ovoo_new,II_ovoo3_new,II_vvvo3_new = intermediates_response.w2_int_So_response(dict_So[r,iroot])
+        II_vvvo,II_vvvo2,II_ovoo2 = intermediates_response.w2_int_Sv_response(Sv) 
+        II_vvvo_new,II_vvvo2_new,II_ovoo2_new = intermediates_response.w2_int_Sv_response(dict_Sv[r,iroot]) 
+
 ##----------------------------------------------------------------------------------------------------------##
                                    #A_lambda So and Sv sector#
 ##----------------------------------------------------------------------------------------------------------##
@@ -253,20 +268,53 @@ def calc_excitation_energy(isym, nroot):
 ##----------------------------------------------------------------------------------------------------------## 
       
       if (tiCCSD):
-        dict_Y_iuab[r,iroot] = amplitude_response.Sv_diagram_vs_contraction_response(dict_Sv[r,iroot])
 
-        dict_Y_iuab[r,iroot] += amplitude_response.Sv_diagram_vt_contraction_response(dict_t2[r,iroot])
-        dict_Y_iuab[r,iroot] += amplitude_response.T1_contribution_Sv_response(dict_t1[r,iroot])
-  
+        dict_Y_iuab[r,iroot] = amplitude_response.Sv_diagram_vs_contraction_response(dict_Sv[r,iroot]) ##(Fock_Sv)c and (V_Sv)c linear terms contributing to R_iuab
+
+        dict_Y_iuab[r,iroot] += amplitude_response.Sv_diagram_vt_contraction_response(dict_t2[r,iroot]) ##(V_T2)c terms --> R_iuab
+        dict_Y_iuab[r,iroot] += amplitude_response.T1_contribution_Sv_response(dict_t1[r,iroot])       ##(V_T1)c terms --> R_iuab
+
+        dict_Y_iuab[r,iroot] += amplitude_response.v_so_t_contraction_diag(dict_t2[r,iroot],II_ov) ##(V_So_t)c ----> R_iuab where there is connection b/w So and T
+        dict_Y_iuab[r,iroot] += amplitude_response.v_so_t_contraction_diag(t2,II_ov_new)
+
+        dict_Y_iuab[r,iroot] += amplitude_response.w2_diag_Sv_response(II_vvvo,II_ovoo3,II_vvvo3,dict_t2[r,iroot])  ##(v_S_t)c -----> R_iuab (diag + off-diag) 
+        dict_Y_iuab[r,iroot] += amplitude_response.w2_diag_Sv_response(II_vvvo_new,II_ovoo3_new,II_vvvo3_new,t2)    ##where both diag and off-diag terms are there also these are with two-body int.
+
+        dict_Y_iuab[r,iroot] += amplitude_response.nonlinear_Sv_response(II_vv,dict_Sv[r,iroot])
+        dict_Y_iuab[r,iroot] += amplitude_response.nonlinear_Sv_response(II_vv_new,Sv)
+      
 ##----------------------------------------------------------------------------------------------------------##
                                       #A_kappa So and T sector# 
 ##----------------------------------------------------------------------------------------------------------##
   
-        dict_Y_ijav[r,iroot] = amplitude_response.So_diagram_vs_contraction_response(dict_So[r,iroot])
+        dict_Y_ijav[r,iroot] = amplitude_response.So_diagram_vs_contraction_response(dict_So[r,iroot])  ##(Fock_So)c and (V_So)c linear terms contributing to R_ijav
+        
+        dict_Y_ijav[r,iroot] += amplitude_response.So_diagram_vt_contraction_response(dict_t2[r,iroot])  ##(V_T2)c terms --> R_ijav
+        dict_Y_ijav[r,iroot] += amplitude_response.T1_contribution_So_response(dict_t1[r,iroot])         ##(V_T1)c terms --> R_ijav
 
-        dict_Y_ijav[r,iroot] += amplitude_response.So_diagram_vt_contraction_response(dict_t2[r,iroot])
-        dict_Y_ijav[r,iroot] += amplitude_response.T1_contribution_So_response(dict_t1[r,iroot])
-    
+        dict_Y_ijav[r,iroot] += amplitude_response.v_sv_t_contraction_diag(dict_t2[r,iroot],II_vo)   ##(V_Sv_t)c ----> R_ijav where there is connection b/w Sv and T
+        dict_Y_ijav[r,iroot] += amplitude_response.v_sv_t_contraction_diag(t2,II_vo_new)    ##one body intermediate and all are off diagonal terms
+
+        dict_Y_ijav[r,iroot] += amplitude_response.w2_diag_So_response(II_ovoo,II_vvvo2,II_ovoo2,dict_t2[r,iroot]) ##(v_S_t)c -----> R_ijav 
+        dict_Y_ijav[r,iroot] += amplitude_response.w2_diag_So_response(II_ovoo_new,II_vvvo2_new,II_ovoo2_new,t2)  ##where both diag and off-diag terms are there also these are with two-body int.
+
+        dict_Y_ijav[r,iroot] += amplitude_response.nonlinear_So_response(II_oo,dict_So[r,iroot])
+        dict_Y_ijav[r,iroot] += amplitude_response.nonlinear_So_response(II_oo_new,So)
+      
+##----------------------------------------------------------------------------------------------------------##
+                                #Ruling out the linear dependency# 
+##----------------------------------------------------------------------------------------------------------##
+       
+        for m in range(0,o_act): 
+          dict_Y_ijav[r,iroot][:,occ-o_act+m,:,m] = 0.0
+          dict_Y_ijav[r,iroot][occ-o_act+m,:,:,m] = 0.0
+
+        for n in range(0,v_act): 
+          dict_Y_iuab[r,iroot][:,n,:,n] = 0.0
+          dict_Y_iuab[r,iroot][:,n,n,:] = 0.0
+
+        #dict_Y_ijav[r,iroot][occ-o_act:occ,occ-o_act:occ,:v_act,:] = 0.0
+        #dict_Y_iuab[r,iroot][occ-o_act:occ,:,:v_act,:v_act] = 0.0
 
 ##----------------------------------------------------------------------------------##
                          #Construction of full B matrix#
@@ -344,6 +392,7 @@ def calc_excitation_energy(isym, nroot):
 
     if (tiCCSD):
       B_total += B_Y_ijav+B_Y_iuab
+    #print "B_Y_iuab", B_Y_iuab
 
 ##-------------------------------------------------------------------------------------##
                           #Diagonalization of the B matrix#
@@ -354,7 +403,7 @@ def calc_excitation_energy(isym, nroot):
     
     if (np.all(w_total).imag <= 1e-8):
       w_total = w_total.real    
-    print w_total
+    #print w_total
 
 ##--------------------------------------------------------------------------------------##
                  #Calculation of multiple sorted eigenvalue as#
@@ -520,6 +569,8 @@ def calc_excitation_energy(isym, nroot):
       for iroot in range(0,nroot):
         print "!!!!!!!!!!CONVERGED!!!!!!!!!!!!"
         print 'Excitation Energy for sym', isym, 'iroot', iroot+1, ' :', w[iroot], ' a.u. ', w[iroot]*27.2113839, ' eV'
+      #print 'So:', r,dict_So[r,iroot]
+      #print 't2:', r,dict_t2[r,iroot]
       break
     
 ##---------------------------------------------------------------------------##
@@ -636,6 +687,17 @@ def calc_excitation_energy(isym, nroot):
       dict_t2[r+1,iroot] = dict_norm_t2[iroot]
 
       if (tiCCSD):
+        for m in range(0,o_act):
+          dict_norm_So[iroot][:,occ-o_act+m,:,m] = 0.0
+          dict_norm_So[iroot][occ-o_act+m,:,:,m] = 0.0
+
+        for n in range(0,v_act):
+          dict_norm_Sv[iroot][:,n,:,n] = 0.0
+          dict_norm_Sv[iroot][:,n,n,:] = 0.0
+
+        #dict_norm_So[iroot][occ-o_act:occ,occ-o_act:occ,:v_act,:] = 0.0
+        #dict_norm_Sv[iroot][occ-o_act:occ,:,:v_act,:v_act] = 0.0
+
         dict_So[r+1,iroot] = dict_norm_So[iroot]
         dict_Sv[r+1,iroot] = dict_norm_Sv[iroot]
  

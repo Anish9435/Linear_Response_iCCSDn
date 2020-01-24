@@ -73,7 +73,7 @@ def update_int_response(t2,I_vv,I_oo,Ioooo,Iovvo,Iovvo_2,Iovov):
 
 def W1_int_So(So):
   II_oo = np.zeros((occ,occ)) 
-  II_oo[:,occ-o_act:occ] += -2*0.25*np.einsum('ciml,mlcv->iv',twoelecint_mo[occ:nao,:occ,:occ,:occ],So) + 0.25*np.einsum('diml,lmdv->iv',twoelecint_mo[occ:nao,:occ,:occ,:occ],So)
+  II_oo[:,occ-o_act:occ] += -2*0.25*np.einsum('ciml,mlcv->iv',twoelecint_mo[occ:nao,:occ,:occ,:occ],So) + 0.25*np.einsum('diml,lmdv->iv',twoelecint_mo[occ:nao,:occ,:occ,:occ],So) 
   return II_oo
   gc.collect()
 
@@ -118,3 +118,67 @@ def singles_intermediates_response(t1,t2,I_oo,I_vv):
   I_oovo = None
   I_vovv = None
   gc.collect()
+
+##----------------------------------------------------------------------------------------------##
+                ##Intermediates for (V_S_T)_c terms contributing to R_iuab and R_ijav##
+##----------------------------------------------------------------------------------------------##
+
+def coupling_terms_Sv_response(Sv):
+  II_vo = np.zeros((virt,o_act))
+  II_vo[:v_act,:] += 2*0.25*np.einsum('cblv,lwcb->wv',twoelecint_mo[occ:nao,occ:nao,:occ,occ-o_act:occ],Sv) - 0.25*np.einsum('bclv,lwcb->wv',twoelecint_mo[occ:nao,occ:nao,:occ,occ-o_act:occ],Sv)
+ 
+  return II_vo
+  gc.collect()
+
+def coupling_terms_So_response(So):
+  II_ov = np.zeros((v_act,occ)) 
+  II_ov[:,occ-o_act:occ] += -2*0.25*np.einsum('dulk,lkdx->ux',twoelecint_mo[occ:nao,occ:occ+v_act,:occ,:occ],So) + 0.25*np.einsum('dulk,kldx->ux',twoelecint_mo[occ:nao,occ:occ+v_act,:occ,:occ],So) 
+  
+  return II_ov
+  gc.collect()
+
+##-----------------------------------------------------------------------------------------------------------##
+                ##Two body Intermediates for (V_S_T)_c terms contributing to R_iuab and R_ijav##
+##-----------------------------------------------------------------------------------------------------------##
+
+def w2_int_So_response(So):
+  II_ovoo = np.zeros((occ,virt,o_act,occ))
+  II_ovoo3 = np.zeros((occ,v_act,occ,occ))
+  II_vvvo3 = np.zeros((virt,v_act,virt,occ))
+
+  II_ovoo[:,:,:,occ-o_act:occ] += -np.einsum('cdvk,jkcw->jdvw',twoelecint_mo[occ:nao,occ:nao,occ-o_act:occ,:occ],So)
+
+##-----------------------------------------------------------------------------------------------------------##
+                     ##Intermediates for off diagonal terms like So->R_iuab##
+##-----------------------------------------------------------------------------------------------------------##
+
+  II_ovoo3[:,:,:,occ-o_act:occ] += -np.einsum('dulk,ikdw->iulw',twoelecint_mo[occ:nao,occ:occ+v_act,:occ,:occ],So)
+  II_vvvo3[:,:,:,occ-o_act:occ] += -np.einsum('dulk,lkaw->duaw',twoelecint_mo[occ:nao,occ:occ+v_act,:occ,:occ],So)
+ 
+  return II_ovoo,II_ovoo3,II_vvvo3
+  gc.collect()
+
+
+def w2_int_Sv_response(Sv):
+  II_vvvo = np.zeros((v_act,virt,virt,occ))
+  II_vvvo2 = np.zeros((virt,virt,virt,o_act))
+  II_ovoo2 = np.zeros((occ,virt,occ,o_act))
+ 
+  II_vvvo[:,:v_act,:,:] += -np.einsum('uckl,kxbc->uxbl',twoelecint_mo[occ:occ+v_act,occ:nao,:occ,:occ],Sv) 
+
+##-----------------------------------------------------------------------------------------------------------##
+                     ##Intermediates for off diagonal terms like Sv->R_ijav##
+##-----------------------------------------------------------------------------------------------------------##
+
+  II_vvvo2[:,:v_act,:,:] += -np.einsum('dckv,kxac->dxav',twoelecint_mo[occ:nao,occ:nao,:occ,occ-o_act:occ],Sv)
+  II_ovoo2[:,:v_act,:,:] += np.einsum('dckv,ixdc->ixkv',twoelecint_mo[occ:nao,occ:nao,:occ,occ-o_act:occ],Sv)
+
+  return II_vvvo,II_vvvo2,II_ovoo2
+  gc.collect()
+
+
+                          ##-----------------------------------------------------------------------------------------------------------------------##
+                                                                                    #THE END#
+                          ##-----------------------------------------------------------------------------------------------------------------------##
+
+

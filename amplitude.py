@@ -144,7 +144,7 @@ def higher_order(t1,t2,Iovov_3,Iovvo_3,Iooov,I3,Ioooo_2,I_voov):
              #Construction of S diagrams: Sv contributing to R_iuab#
 ##-------------------------------------------------------------------------------##
 
-def Sv_diagram_vs_contraction(Sv,II_vv):
+def Sv_diagram_vs_contraction(Sv):
   R_iuab = cp.deepcopy(twoelecint_mo[:occ,occ:occ+v_act,occ:nao,occ:nao])
   R_iuab += -np.einsum('ik,kuab->iuab',Fock_mo[:occ,:occ],Sv)
   R_iuab += np.einsum('da,iudb->iuab',Fock_mo[occ:nao,occ:nao],Sv)
@@ -157,7 +157,6 @@ def Sv_diagram_vs_contraction(Sv,II_vv):
   return R_iuab
   
   R_iuab = None
-  II_vv = None   
   gc.collect()
   
 ##-------------------------------------------------------------------------------##
@@ -179,7 +178,7 @@ def Sv_diagram_vt_contraction(t2):
              #Construction of S diagrams: So contributing to R_ijav#
 ##-------------------------------------------------------------------------------##
 
-def So_diagram_vs_contraction(So,II_oo):
+def So_diagram_vs_contraction(So):
   R_ijav = cp.deepcopy(twoelecint_mo[:occ,:occ,occ:nao,occ-o_act:occ])
   R_ijav += np.einsum('da,ijdv->ijav',Fock_mo[occ:nao,occ:nao],So)
   R_ijav += -np.einsum('jl,ilav->ijav',Fock_mo[:occ,:occ],So)
@@ -192,7 +191,6 @@ def So_diagram_vs_contraction(So,II_oo):
   return R_ijav
   
   R_ijav = None
-  II_oo = None
   gc.collect()
 
 ##-------------------------------------------------------------------------------##
@@ -255,6 +253,60 @@ def inserted_diag_Sv(t2,II_vv):
   R_ijab = None
   II_vv = None
   gc.collect() 
+
+##-----------------------------------------------------------------------------------##
+                        #(vst)_c terms contributing towards#
+                                  #R_iuab and R_ijav#
+##-----------------------------------------------------------------------------------##
+ 
+def v_so_t_contraction_diag(t2,II_ov):
+  R_iuab = -np.einsum('ux,xiba->iuab',II_ov,t2) 
+  return R_iuab
+
+  R_iuab = None
+  II_ov = None
+  gc.collect()
+
+def v_sv_t_contraction_diag(t2,II_vo):
+  R_ijav = np.einsum('wv,jiwa->ijav',II_vo,t2)
+  return R_ijav
+
+  R_ijav = None
+  II_vo = None
+  gc.collect()
+
+##-----------------------------------------------------------------------------------##
+                        #Two body (vst)_c terms contributing towards#
+                                  #R_iuab and R_ijav#
+##-----------------------------------------------------------------------------------##
+
+def w2_diag_So(II_ovoo,II_vvvo2,II_ovoo2,t2):
+  R_ijav = 2.0*np.einsum('jdvw,wida->ijav',II_ovoo,t2)
+  R_ijav += -np.einsum('jdvw,wiad->ijav',II_ovoo,t2) #diagonal terms
+  #R_ijav += np.einsum('dxav,ijdx->ijav',II_vvvo2,t2) #off-diagonal terms
+  #R_ijav += -np.einsum('ixkv,kjax->ijav',II_ovoo2,t2)
+  #R_ijav += -np.einsum('jxkv,kixa->ijav',II_ovoo2,t2)
+  return R_ijav
+
+  R_ijav = None
+  II_ovoo = None
+  II_vvvo2 = None
+  II_ovoo2 = None
+  gc.collect()
+
+def w2_diag_Sv(II_vvvo,II_ovoo3,II_vvvo3,t2):
+  R_iuab = 2.0*np.einsum('uxbl,ilax->iuab',II_vvvo,t2)
+  R_iuab += -np.einsum('uxbl,ilxa->iuab',II_vvvo,t2)
+  #R_iuab += -np.einsum('iulw,lwab->iuab',II_ovoo3,t2)
+  #R_iuab += -np.einsum('duaw,iwdb->iuab',II_vvvo3,t2) 
+  #R_iuab += -np.einsum('dubw,iwad->iuab',II_vvvo3,t2) 
+  return R_iuab
+
+  R_iuab = None
+  II_vvvo = None
+  II_ovoo3 = None
+  II_vvvo3 = None
+  gc.collect()
 
                ##---------------------------------------------------------------------------------------------------------------------------------------##
                                                                          #THE END#

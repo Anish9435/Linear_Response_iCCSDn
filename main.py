@@ -266,9 +266,14 @@ for x in range(0,n_iter):
     I1, I2 = intermediates.R_ia_intermediates(t1)
     II_oo = intermediates.W1_int_So(So)
     II_vv = intermediates.W1_int_Sv(Sv)
+    II_vo = intermediates.coupling_terms_Sv(Sv)
+    II_ov = intermediates.coupling_terms_So(So)
     
+    II_ovoo,II_ovoo3,II_vvvo3 = intermediates.w2_int_So(So)
+    II_vvvo,II_vvvo2,II_ovoo2 = intermediates.w2_int_Sv(Sv)
+ 
     R_ia = amplitude.singles(I1,I2,I_oo,I_vv,tau,t1,t2)
-    I_oo,I_vv,I_oovo,I_vovv,Ioooo_2,I_voov,Iovov_3,Iovvo_3,Iooov,I3=intermediates.singles_intermediates(t1,t2,I_oo,I_vv,I2)
+    I_oo,I_vv,I_oovo,I_vovv,Ioooo_2,I_voov,Iovov_3,Iovvo_3,Iooov,I3 = intermediates.singles_intermediates(t1,t2,I_oo,I_vv,I2)
     R_ijab = amplitude.doubles(I_oo,I_vv,Ivvvv,Ioooo,Iovvo,Iovvo_2,Iovov,Iovov_2,tau,t2)
     R_ijab += amplitude.singles_n_doubles(t1,I_oovo,I_vovv) 
     R_ijab += amplitude.higher_order(t1,t2,Iovov_3,Iovvo_3,Iooov,I3,Ioooo_2,I_voov)
@@ -276,21 +281,27 @@ for x in range(0,n_iter):
     R_ijab += amplitude.inserted_diag_Sv(t2,II_vv) 
     R_ijab = cc_symmetrize.symmetrize(R_ijab)
     
-    R_iuab = amplitude.Sv_diagram_vs_contraction(Sv,II_vv)
+    R_iuab = amplitude.Sv_diagram_vs_contraction(Sv)
     R_iuab += amplitude.Sv_diagram_vt_contraction(t2)
-    R_iuab += amplitude.T1_contribution_Sv(t1)
+    #R_iuab += amplitude.T1_contribution_Sv(t1)
+    R_iuab += amplitude.v_so_t_contraction_diag(t2,II_ov)
+    R_iuab += amplitude.w2_diag_Sv(II_vvvo,II_ovoo3,II_vvvo3,t2)
 
-    R_ijav = amplitude.So_diagram_vs_contraction(So,II_oo)
+    R_ijav = amplitude.So_diagram_vs_contraction(So)
     R_ijav += amplitude.So_diagram_vt_contraction(t2)
-    R_ijav += amplitude.T1_contribution_So(t1)
+    #R_ijav += amplitude.T1_contribution_So(t1)
+    R_ijav += amplitude.v_sv_t_contraction_diag(t2,II_vo)
+    R_ijav += amplitude.w2_diag_So(II_ovoo,II_vvvo2,II_ovoo2,t2)
     
     oldt2 = t2.copy()
     oldt1 = t1.copy()
     oldSo = So.copy()
     oldSv = Sv.copy()
+
     eps_t, t1, t2 = cc_update.update_t1t2(R_ia,R_ijab,t1,t2)
     eps_So, So = cc_update.update_So(R_ijav,So)
     eps_Sv, Sv = cc_update.update_Sv(R_iuab,Sv)
+
     if inp.diis == True:
       if x+1>max_diis:
         # Limit size of DIIS vector

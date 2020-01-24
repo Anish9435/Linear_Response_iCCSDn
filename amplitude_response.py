@@ -176,7 +176,7 @@ def inserted_diag_So_t1(t1,II_oo):
 
   R_ia = None
   II_oo = None
-  gc.collect()               ####WHERE X IS T2 OF ZEROTH OR FIRST ORDER AND Y IS THE CORRESPONDING INTERMEDIATE OF FIRST OR ZEROTH ORDER####
+  gc.collect()               
 
 def inserted_diag_Sv_t1(t1,II_vv):
   R_ia = np.einsum('ca,ic->ia',II_vv,t1)  
@@ -184,6 +184,27 @@ def inserted_diag_Sv_t1(t1,II_vv):
 
   R_ia = None
   II_vv = None
+  gc.collect()
+
+##-----------------------------------------------------------------------------------##
+                        #(vst)_c terms contributing towards#
+                                  #R_iuab and R_ijav#
+##-----------------------------------------------------------------------------------##
+ 
+def v_so_t_contraction_diag(t2,II_ov):
+  R_iuab = -np.einsum('ux,xiba->iuab',II_ov,t2) 
+  return R_iuab
+
+  R_iuab = None
+  II_ov = None
+  gc.collect()
+
+def v_sv_t_contraction_diag(t2,II_vo):
+  R_ijav = np.einsum('wv,jiwa->ijav',II_vo,t2)
+  return R_ijav
+
+  R_ijav = None
+  II_vo = None
   gc.collect()
 
 ##----------------------------------------------------------------------------------------------##
@@ -280,6 +301,58 @@ def T1_contribution_So_response(t1):
   R_ijav = None
   gc.collect()
 
-                          ##-----------------------------------------------------------------------------------------------------------------------##
-                                                                                    #THE END#
-                          ##-----------------------------------------------------------------------------------------------------------------------##
+##----------------------------------------------------------------------------------------------##
+                      #Non linear response of S towards R_iuab and R_ijav#
+##----------------------------------------------------------------------------------------------##
+
+def nonlinear_So_response(II_oo,So):
+  R_ijav = np.einsum('ijax,xv->ijav',So,II_oo[occ-o_act:occ,occ-o_act:occ])     #### -(So(H.So)_c)_c term
+  return R_ijav               ###additional -ve for -(So(H.So)_c)_c term 
+
+  R_ijav = None
+  gc.collect()
+
+def nonlinear_Sv_response(II_vv,Sv):
+  R_iuab = -np.einsum('iwab,uw->iuab',Sv,II_vv[:v_act,:v_act])     #### -(Sv(H,Sv)_c)_c term
+  return R_iuab            ###additional -ve for -(Sv(H.Sv)_c)_c term
+
+  R_iuab = None
+  gc.collect()
+
+##-----------------------------------------------------------------------------------##
+                        #Two body (vst)_c terms contributing towards#
+                                  #R_iuab and R_ijav#
+##-----------------------------------------------------------------------------------##
+
+def w2_diag_So_response(II_ovoo,II_vvvo2,II_ovoo2,t2):
+  R_ijav = 2.0*np.einsum('jdvw,wida->ijav',II_ovoo,t2)
+  R_ijav += -np.einsum('jdvw,wiad->ijav',II_ovoo,t2) #diagonal terms
+  R_ijav += np.einsum('dxav,ijdx->ijav',II_vvvo2,t2) #off-diagonal terms
+  R_ijav += -np.einsum('ixkv,kjax->ijav',II_ovoo2,t2)
+  R_ijav += -np.einsum('jxkv,kixa->ijav',II_ovoo2,t2)
+  return R_ijav
+
+  R_ijav = None
+  II_ovoo = None
+  II_vvvo2 = None
+  II_ovoo2 = None
+  gc.collect()
+
+def w2_diag_Sv_response(II_vvvo,II_ovoo3,II_vvvo3,t2):
+  R_iuab = 2.0*np.einsum('uxbl,ilax->iuab',II_vvvo,t2)
+  R_iuab += -np.einsum('uxbl,ilxa->iuab',II_vvvo,t2)
+  R_iuab += -np.einsum('iulw,lwab->iuab',II_ovoo3,t2)
+  R_iuab += -np.einsum('duaw,iwdb->iuab',II_vvvo3,t2) 
+  R_iuab += -np.einsum('dubw,iwad->iuab',II_vvvo3,t2) 
+  return R_iuab
+
+  R_iuab = None
+  II_vvvo = None
+  II_ovoo3 = None
+  II_vvvo3 = None
+  gc.collect()
+
+
+                  ##-----------------------------------------------------------------------------------------------------------------------##
+                                                                         #THE END#
+                  ##-----------------------------------------------------------------------------------------------------------------------##
