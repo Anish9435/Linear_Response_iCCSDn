@@ -66,7 +66,7 @@ if (tiCCSD):
 #print 'Do', Do
 #print 'Dv', Dv
 
-conv = 5*(10**(-inp.LR_conv))
+conv = 1*(10**(-inp.LR_conv))
 
 sym = trans_mo.mol.symmetry
 orb_sym_pyscf = trans_mo.orb_symm
@@ -187,7 +187,7 @@ def calc_excitation_energy(isym, nroot):
 ##-------------------------------------------------------------------------------------------------------##
                                       #one body diagrams#
 ##-------------------------------------------------------------------------------------------------------##
-
+      
       dict_Y_ia[r,iroot] += amplitude_response.singles_response_quadratic(I_oo,I_vv,I1,I2,dict_t1[r,iroot],dict_t2[r,iroot])
       dict_Y_ia[r,iroot] += amplitude_response.singles_response_quadratic(I_oo_new,I_vv_new,I1_new,I2_new,t1,t2)
   
@@ -260,7 +260,7 @@ def calc_excitation_energy(isym, nroot):
         dict_Y_ijab[r,iroot] += amplitude_response.inserted_diag_So(t2,II_oo_new)
         dict_Y_ijab[r,iroot] += amplitude_response.inserted_diag_Sv(dict_t2[r,iroot],II_vv)
         dict_Y_ijab[r,iroot] += amplitude_response.inserted_diag_Sv(t2,II_vv_new)
-
+      
       dict_Y_ijab[r,iroot] = cc_symmetrize.symmetrize(dict_Y_ijab[r,iroot])
         
 ##----------------------------------------------------------------------------------------------------------##
@@ -280,7 +280,7 @@ def calc_excitation_energy(isym, nroot):
         dict_Y_iuab[r,iroot] += amplitude_response.w2_diag_Sv_response(II_vvvo,II_ovoo3,II_vvvo3,dict_t2[r,iroot])  ##(v_S_t)c -----> R_iuab (diag + off-diag) 
         dict_Y_iuab[r,iroot] += amplitude_response.w2_diag_Sv_response(II_vvvo_new,II_ovoo3_new,II_vvvo3_new,t2)    ##where both diag and off-diag terms are there also these are with two-body int.
 
-        dict_Y_iuab[r,iroot] += amplitude_response.nonlinear_Sv_response(II_vv,dict_Sv[r,iroot])
+        dict_Y_iuab[r,iroot] += amplitude_response.nonlinear_Sv_response(II_vv,dict_Sv[r,iroot]) ##Non linear terms of Sv
         dict_Y_iuab[r,iroot] += amplitude_response.nonlinear_Sv_response(II_vv_new,Sv)
       
 ##----------------------------------------------------------------------------------------------------------##
@@ -298,13 +298,13 @@ def calc_excitation_energy(isym, nroot):
         dict_Y_ijav[r,iroot] += amplitude_response.w2_diag_So_response(II_ovoo,II_vvvo2,II_ovoo2,dict_t2[r,iroot]) ##(v_S_t)c -----> R_ijav 
         dict_Y_ijav[r,iroot] += amplitude_response.w2_diag_So_response(II_ovoo_new,II_vvvo2_new,II_ovoo2_new,t2)  ##where both diag and off-diag terms are there also these are with two-body int.
 
-        dict_Y_ijav[r,iroot] += amplitude_response.nonlinear_So_response(II_oo,dict_So[r,iroot])
+        dict_Y_ijav[r,iroot] += amplitude_response.nonlinear_So_response(II_oo,dict_So[r,iroot])     ##Non linear terms of So
         dict_Y_ijav[r,iroot] += amplitude_response.nonlinear_So_response(II_oo_new,So)
       
 ##----------------------------------------------------------------------------------------------------------##
                                 #Ruling out the linear dependency# 
 ##----------------------------------------------------------------------------------------------------------##
-       
+                 
         for m in range(0,o_act): 
           dict_Y_ijav[r,iroot][:,occ-o_act+m,:,m] = 0.0
           dict_Y_ijav[r,iroot][occ-o_act+m,:,:,m] = 0.0
@@ -312,7 +312,7 @@ def calc_excitation_energy(isym, nroot):
         for n in range(0,v_act): 
           dict_Y_iuab[r,iroot][:,n,:,n] = 0.0
           dict_Y_iuab[r,iroot][:,n,n,:] = 0.0
-
+        
         #dict_Y_ijav[r,iroot][occ-o_act:occ,occ-o_act:occ,:v_act,:] = 0.0
         #dict_Y_iuab[r,iroot][occ-o_act:occ,:,:v_act,:v_act] = 0.0
 
@@ -392,7 +392,6 @@ def calc_excitation_energy(isym, nroot):
 
     if (tiCCSD):
       B_total += B_Y_ijav+B_Y_iuab
-    #print "B_Y_iuab", B_Y_iuab
 
 ##-------------------------------------------------------------------------------------##
                           #Diagonalization of the B matrix#
@@ -403,7 +402,6 @@ def calc_excitation_energy(isym, nroot):
     
     if (np.all(w_total).imag <= 1e-8):
       w_total = w_total.real    
-    #print w_total
 
 ##--------------------------------------------------------------------------------------##
                  #Calculation of multiple sorted eigenvalue as#
@@ -569,8 +567,40 @@ def calc_excitation_energy(isym, nroot):
       for iroot in range(0,nroot):
         print "!!!!!!!!!!CONVERGED!!!!!!!!!!!!"
         print 'Excitation Energy for sym', isym, 'iroot', iroot+1, ' :', w[iroot], ' a.u. ', w[iroot]*27.2113839, ' eV'
-      #print 'So:', r,dict_So[r,iroot]
-      #print 't2:', r,dict_t2[r,iroot]
+
+      
+        for i in range(0,occ):
+          for a in range(0,virt):
+            if(abs(dict_t1[r,iroot][i,a]) > 5.0*10e-3): 
+              print "Highest t1 for root  " ,iroot, " is   ", i,"-->  ", a+occ,"   ", dict_t1[r,iroot][i,a] 
+
+        print "---------------------------------"
+        for i in range(0,occ):
+          for j in range(0,occ):
+            for a in range(0,virt):
+              for b in range(0,a+1):
+                if(abs(dict_t2[r,iroot][i,j,a,b]) > 1.0*10e-2): 
+                  print "Highest t2 for root  " ,iroot, " is   ", i,"  ",j,"-->  ", a+occ,"  ",b+occ,"   ", dict_t2[r,iroot][i,j,a,b] 
+
+        print "---------------------------------"
+        if (tiCCSD):
+          for i in range(0,occ):
+            for u in range(0,v_act):
+              for a in range(0,virt):
+                for b in range(0,a+1):
+                  if(abs(dict_Sv[r,iroot][i,u,a,b]) > 1.0*10e-2): 
+                    print "Highest Sv for root  " ,iroot, " is   ", i,"  ",u+occ,"-->  ", a+occ,"  ",b+occ,"   ", dict_Sv[r,iroot][i,u,a,b] 
+
+          print "---------------------------------"
+          for i in range(0,occ):
+            for j in range(0,occ):
+              for a in range(0,virt):
+                for v in range(0,o_act):
+                  if(abs(dict_So[r,iroot][i,j,a,v]) > 1.0*10e-2): 
+                    print "Highest So for root  " ,iroot, " is   ", i,"  ",j,"-->  ", a+occ,"  ",v+occ-o_act,"   ", dict_So[r,iroot][i,j,a,v] 
+        print "---------------------------------"
+        print "---------------------------------"
+        print "           "
       break
     
 ##---------------------------------------------------------------------------##
@@ -687,6 +717,7 @@ def calc_excitation_energy(isym, nroot):
       dict_t2[r+1,iroot] = dict_norm_t2[iroot]
 
       if (tiCCSD):
+         
         for m in range(0,o_act):
           dict_norm_So[iroot][:,occ-o_act+m,:,m] = 0.0
           dict_norm_So[iroot][occ-o_act+m,:,:,m] = 0.0
@@ -694,7 +725,7 @@ def calc_excitation_energy(isym, nroot):
         for n in range(0,v_act):
           dict_norm_Sv[iroot][:,n,:,n] = 0.0
           dict_norm_Sv[iroot][:,n,n,:] = 0.0
-
+         
         #dict_norm_So[iroot][occ-o_act:occ,occ-o_act:occ,:v_act,:] = 0.0
         #dict_norm_Sv[iroot][occ-o_act:occ,:,:v_act,:v_act] = 0.0
 
