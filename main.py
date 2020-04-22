@@ -27,7 +27,6 @@ mol = inp.mol
 ##------------------------------------------------------------------------##
         #Obtain the number of atomic orbitals in the basis set#
 ##------------------------------------------------------------------------##
-
 nao = MP2.nao
 
 ##--------------------------------------------------##
@@ -359,17 +358,21 @@ for x in range(0,n_iter):
     I_oo,I_vv,Ioooo,Iovvo,Iovvo_2,Iovov = intermediates.update_int(tau,t2,I_vv,I_oo,Ioooo,Iovvo,Iovvo_2,Iovov)
 
     I1, I2 = intermediates.R_ia_intermediates(t1)
-    II_oo, II_vv = intermediates.W1_intermediates(So,Sv)
+#   II_oo, II_vv = intermediates.W1_intermediates(So,Sv)
+    II_oo = intermediates.W1_int_So(So)
+    II_vv = intermediates.W1_int_Sv(Sv)
     R_ia = amplitude.singles(I1,I2,I_oo,I_vv,tau,t1,t2)
-    I_oo,I_vv,I_oovo,I_vovv,Ioooo_2,I_voov,Iovov_3,Iovvo_3,Iooov,I3=intermediates.singles_intermediates(t1,t2,tau,I_oo,I_vv,I2)
+    I_oo,I_vv,I_oovo,I_vovv,Ioooo_2,I_voov,Iovov_3,Iovvo_3,Iooov,I3=intermediates.singles_intermediates(t1,t2,I_oo,I_vv,I2)
     R_ijab = amplitude.doubles(I_oo,I_vv,Ivvvv,Ioooo,Iovvo,Iovvo_2,Iovov,Iovov_2,tau,t2)
-    R_ijab += amplitude.singles_n_doubles(t1,t2,tau,I_oovo,I_vovv,Iovov_3,Iovvo_3,Iooov,I3,Ioooo_2,I_voov)
-    R_ijab += amplitude.S_diagrams(t2,II_oo,II_vv) 
-    R_ijab = amplitude.symmetrize(R_ijab)
+    R_ijab += amplitude.singles_n_doubles(t1,I_oovo,I_vovv) 
+    R_ijab += amplitude.inserted_diag_So(t2,II_oo) 
+    R_ijab += amplitude.inserted_diag_Sv(t2,II_vv) 
+    R_ijab += amplitude.higher_order(t1,t2,Iovov_3,Iovvo_3,Iooov,I3,Ioooo_2,I_voov)
+    R_ijab = cc_symmetrize.symmetrize(R_ijab)
     
     oldt2 = t2.copy()
     oldt1 = t1.copy()
-    eps_t, t1, t2 = amplitude.update_t1t2(R_ia,R_ijab,t1,t2)
+    eps_t, t1, t2 = cc_update.update_t1t2(R_ia,R_ijab,t1,t2)
     if inp.diis == True:
       if x+1>max_diis:
         # Limit size of DIIS vector
