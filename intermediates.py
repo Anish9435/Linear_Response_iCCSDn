@@ -1,7 +1,7 @@
 
                    ##----------------------------------------------------------------------------------------------------------------##
                                    
-                                           # Routine to calculate Hatree-Fock energy and verify with pyscf routine #
+                                      # Routine to construct differnt one and two body intermediates for CC diagrams #
                                                 # Author: Soumi Tribedi, Anish Chakraborty, Rahul Maitra #
                                                                   # Date - 10th Dec, 2019 # 
 

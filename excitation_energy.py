@@ -61,15 +61,10 @@ if (tiCCSD):
   Do = 1.0*MP2.Do 
   Dv = 1.0*MP2.Dv 
 
-#print 'D1', D1
-#print 'D2', D2
-#print 'Do', Do
-#print 'Dv', Dv
-
-conv = 1*(10**(-inp.LR_conv))
+conv = 5*(10**(-inp.LR_conv))
 
 sym = trans_mo.mol.symmetry
-orb_sym_pyscf = trans_mo.orb_symm
+orb_sym_pyscf = MP2.orb_symm
 orb_sym = davidson.get_orb_sym(orb_sym_pyscf, sym)
 
 ##---------------------------------------------------------------------------------##
@@ -202,6 +197,32 @@ def calc_excitation_energy(isym, nroot):
       dict_Y_ia[r,iroot] += -np.einsum('cbja,ic,jb->ia',twoelecint_mo[occ:nao,occ:nao,:occ,occ:nao],dict_t1[r,iroot],t1)
   
 ##---------------------------------------------------------------------------------------------------------##
+                                      #higher order one-body terms#
+##---------------------------------------------------------------------------------------------------------##
+       
+                         ##--------------------------------------##
+                                ##diagram non-linear m## 
+                         ##--------------------------------------##
+
+      int_one_body = np.einsum('cdkl,kd,la->ca',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t1,t1)
+      dict_Y_ia[r,iroot] += np.einsum('ca,ic->ia',int_one_body,dict_t1[r,iroot])
+      int_one_body = np.einsum('cdkl,kd,la->ca',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t1,dict_t1[r,iroot])
+      dict_Y_ia[r,iroot] += np.einsum('ca,ic->ia',int_one_body,t1)
+      int_one_body = np.einsum('cdkl,kd,la->ca',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],dict_t1[r,iroot],t1)
+      dict_Y_ia[r,iroot] += np.einsum('ca,ic->ia',int_one_body,t1)
+
+                         ##--------------------------------------##
+                                ##diagram non-linear n## 
+                         ##--------------------------------------##
+
+      int_one_body2 = 2.0*np.einsum('dclk,ld,ic->ik',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t1,t1)
+      dict_Y_ia[r,iroot] += -np.einsum('ik,ka->ia',int_one_body2,dict_t1[r,iroot])
+      int_one_body2 = 2.0*np.einsum('dclk,ld,ic->ik',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t1,dict_t1[r,iroot])
+      dict_Y_ia[r,iroot] += -np.einsum('ik,ka->ia',int_one_body2,t1)
+      int_one_body2 = 2.0*np.einsum('dclk,ld,ic->ik',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],dict_t1[r,iroot],t1)
+      dict_Y_ia[r,iroot] += -np.einsum('ik,ka->ia',int_one_body2,t1)
+      
+##---------------------------------------------------------------------------------------------------------##
                                #Further update of the intermdiates#
 ##---------------------------------------------------------------------------------------------------------##
   
@@ -227,6 +248,157 @@ def calc_excitation_energy(isym, nroot):
       dict_Y_ijab[r,iroot] += -np.einsum('ickb,ka,jc->ijab',twoelecint_mo[:occ,occ:nao,:occ,occ:nao],dict_t1[r,iroot],t1)   #diagrams non-linear 3
       dict_Y_ijab[r,iroot] += -np.einsum('icak,jc,kb->ijab',twoelecint_mo[:occ,occ:nao,occ:nao,:occ],dict_t1[r,iroot],t1)   #diagrams non-linear 4
   
+##---------------------------------------------------------------------------------------------------------##
+                                      #higher order terms#
+##---------------------------------------------------------------------------------------------------------##
+      
+                         ##--------------------------------------##
+                                ##diagram non-linear 30## 
+                         ##--------------------------------------##
+
+      int1 = -np.einsum('iclk,la,jc->ijak',twoelecint_mo[:occ,occ:nao,:occ,:occ],t1,t1)  
+      dict_Y_ijab[r,iroot] += -np.einsum('ijak,kb->ijab',int1,dict_t1[r,iroot])  
+      int1 = -np.einsum('iclk,la,jc->ijak',twoelecint_mo[:occ,occ:nao,:occ,:occ],t1,dict_t1[r,iroot])  
+      dict_Y_ijab[r,iroot] += -np.einsum('ijak,kb->ijab',int1,t1)  
+      int1 = -np.einsum('iclk,la,jc->ijak',twoelecint_mo[:occ,occ:nao,:occ,:occ],dict_t1[r,iroot],t1)  
+      dict_Y_ijab[r,iroot] += -np.einsum('ijak,kb->ijab',int1,t1)  
+      int1 = None
+                
+                         ##--------------------------------------##
+                                 ##diagram non-linear 31## 
+                         ##--------------------------------------##
+
+      int2 = np.einsum('cdbk,jc,id->jibk',twoelecint_mo[occ:nao,occ:nao,occ:nao,:occ],t1,t1)
+      dict_Y_ijab[r,iroot] += -np.einsum('jibk,ka->ijab',int2,dict_t1[r,iroot])
+      int2 = np.einsum('cdbk,jc,id->jibk',twoelecint_mo[occ:nao,occ:nao,occ:nao,:occ],t1,dict_t1[r,iroot])
+      dict_Y_ijab[r,iroot] += -np.einsum('jibk,ka->ijab',int2,t1)
+      int2 = np.einsum('cdbk,jc,id->jibk',twoelecint_mo[occ:nao,occ:nao,occ:nao,:occ],dict_t1[r,iroot],t1)
+      dict_Y_ijab[r,iroot] += -np.einsum('jibk,ka->ijab',int2,t1)
+      int2 = None
+
+                         ##--------------------------------------##
+                                 ##diagram non-linear 32&33## 
+                         ##--------------------------------------##
+
+      int3 = -np.einsum('dclk,ic,ka->dila',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t1,t1)
+      dict_Y_ijab[r,iroot] += 2*np.einsum('dila,jlbd->ijab',int3,dict_t2[r,iroot]) #32
+      dict_Y_ijab[r,iroot] += -np.einsum('dila,jldb->ijab',int3,dict_t2[r,iroot])  #33
+      int3 = -np.einsum('dclk,ic,ka->dila',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t1,dict_t1[r,iroot])
+      dict_Y_ijab[r,iroot] += 2*np.einsum('dila,jlbd->ijab',int3,t2)
+      dict_Y_ijab[r,iroot] += -np.einsum('dila,jldb->ijab',int3,t2)
+      int3 = -np.einsum('dclk,ic,ka->dila',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],dict_t1[r,iroot],t1)
+      dict_Y_ijab[r,iroot] += 2*np.einsum('dila,jlbd->ijab',int3,t2)
+      dict_Y_ijab[r,iroot] += -np.einsum('dila,jldb->ijab',int3,t2)
+      int3 = None
+
+                         ##--------------------------------------##
+                                 ##diagram non-linear 34## 
+                         ##--------------------------------------##
+     
+      int4 = np.einsum('dckl,kc,lb->db',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t1,t1) 
+      dict_Y_ijab[r,iroot] += np.einsum('db,jida->ijab',int4,dict_t2[r,iroot])
+      int4 = np.einsum('dckl,kc,lb->db',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t1,dict_t1[r,iroot]) 
+      dict_Y_ijab[r,iroot] += np.einsum('db,jida->ijab',int4,t2)
+      int4 = np.einsum('dckl,kc,lb->db',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],dict_t1[r,iroot],t1) 
+      dict_Y_ijab[r,iroot] += np.einsum('db,jida->ijab',int4,t2)
+      int4 = None
+
+                         ##--------------------------------------##
+                                 ##diagram non-linear 35## 
+                         ##--------------------------------------##
+
+      int5 = -np.einsum('cdlk,kc,jd->jl',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t1,t1)
+      dict_Y_ijab[r,iroot] += -np.einsum('jl,liba->ijab',int5,dict_t2[r,iroot])
+      int5 = -np.einsum('cdlk,kc,jd->jl',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t1,dict_t1[r,iroot])
+      dict_Y_ijab[r,iroot] += -np.einsum('jl,liba->ijab',int5,t2)
+      int5 = -np.einsum('cdlk,kc,jd->jl',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],dict_t1[r,iroot],t1)
+      dict_Y_ijab[r,iroot] += -np.einsum('jl,liba->ijab',int5,t2)
+      int5 = None
+
+                         ##--------------------------------------##
+                                 ##diagram non-linear 36## 
+                         ##--------------------------------------##
+
+      int6 = -np.einsum('cdlk,jc,ka->jdla',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t1,t1)
+      dict_Y_ijab[r,iroot] += -np.einsum('jdla,libd->ijab',int6,dict_t2[r,iroot])
+      int6 = -np.einsum('cdlk,jc,ka->jdla',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t1,dict_t1[r,iroot])
+      dict_Y_ijab[r,iroot] += -np.einsum('jdla,libd->ijab',int6,t2)
+      int6 = -np.einsum('cdlk,jc,ka->jdla',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],dict_t1[r,iroot],t1)
+      dict_Y_ijab[r,iroot] += -np.einsum('jdla,libd->ijab',int6,t2)
+      int6 = None
+
+                         ##--------------------------------------##
+                                 ##diagram non-linear 37## 
+                         ##--------------------------------------##
+
+      int7 = 0.5*np.einsum('cdlk,jc,id->jilk',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t1,t1)
+      dict_Y_ijab[r,iroot] += np.einsum('jilk,lkba->ijab',int7,dict_t2[r,iroot])
+      int7 = 0.5*np.einsum('cdlk,jc,id->jilk',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t1,dict_t1[r,iroot])
+      dict_Y_ijab[r,iroot] += np.einsum('jilk,lkba->ijab',int7,t2)
+      int7 = 0.5*np.einsum('cdlk,jc,id->jilk',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],dict_t1[r,iroot],t1)
+      dict_Y_ijab[r,iroot] += np.einsum('jilk,lkba->ijab',int7,t2)
+      int7 = None
+
+                         ##--------------------------------------##
+                                 ##diagram non-linear 38## 
+                         ##--------------------------------------##
+
+      int8 = np.einsum('cdlk,lb,ka->cdba',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t1,t1)
+      dict_Y_ijab[r,iroot] += 0.5*np.einsum('cdba,jicd->ijab',int8,dict_t2[r,iroot]) 
+      int8 = np.einsum('cdlk,lb,ka->cdba',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t1,dict_t1[r,iroot])
+      dict_Y_ijab[r,iroot] += 0.5*np.einsum('cdba,jicd->ijab',int8,t2) 
+      int8 = np.einsum('cdlk,lb,ka->cdba',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],dict_t1[r,iroot],t1)
+      dict_Y_ijab[r,iroot] += 0.5*np.einsum('cdba,jicd->ijab',int8,t2) 
+      int8 = None
+
+                         ##--------------------------------------##
+                                 ##diagram non-linear 39## 
+                         ##--------------------------------------##
+
+      int9 = -np.einsum('cdkl,jc,lb->jdkb',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t1,t1)
+      dict_Y_ijab[r,iroot] += -np.einsum('jdkb,kida->ijab',int9,dict_t2[r,iroot])
+      int9 = -np.einsum('cdkl,jc,lb->jdkb',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t1,dict_t1[r,iroot])
+      dict_Y_ijab[r,iroot] += -np.einsum('jdkb,kida->ijab',int9,t2)
+      int9 = -np.einsum('cdkl,jc,lb->jdkb',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],dict_t1[r,iroot],t1)
+      dict_Y_ijab[r,iroot] += -np.einsum('jdkb,kida->ijab',int9,t2)
+      int9 = None
+
+                         ##--------------------------------------##
+                                 ##diagram non-linear 40## 
+                         ##--------------------------------------##
+
+      int10 = -0.5*np.einsum('cdkl,kb,id->cibl',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t1,dict_t1[r,iroot]) 
+      int10 += -0.5*np.einsum('cdkl,kb,id->cibl',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],dict_t1[r,iroot],t1) 
+      dict_Y_ijab[r,iroot] += -np.einsum('cibl,jc,la->ijab',int10,t1,t1)
+      int10 = -0.5*np.einsum('cdkl,kb,id->cibl',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t1,t1) 
+      dict_Y_ijab[r,iroot] += -np.einsum('cibl,jc,la->ijab',int10,dict_t1[r,iroot],t1)
+      dict_Y_ijab[r,iroot] += -np.einsum('cibl,jc,la->ijab',int10,t1,dict_t1[r,iroot])
+      int10 = None
+
+                         ##--------------------------------------##
+                                 ##diagram non-linear 38'## 
+                         ##--------------------------------------##
+
+      int11 = 2.0*np.einsum('dclk,ld,ic->ik',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t1,t1)
+      dict_Y_ijab[r,iroot] += -np.einsum('ik,kjab->ijab',int11,dict_t2[r,iroot]) 
+      int11 = 2.0*np.einsum('dclk,ld,ic->ik',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t1,dict_t1[r,iroot])
+      dict_Y_ijab[r,iroot] += -np.einsum('ik,kjab->ijab',int11,t2) 
+      int11 = 2.0*np.einsum('dclk,ld,ic->ik',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],dict_t1[r,iroot],t1)
+      dict_Y_ijab[r,iroot] += -np.einsum('ik,kjab->ijab',int11,t2) 
+      int11 = None
+                       
+                         ##--------------------------------------##
+                                 ##diagram non-linear 34'## 
+                         ##--------------------------------------##
+      
+      int12 = -2.0*np.einsum('dclk,ld,ka->ca',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t1,t1)
+      dict_Y_ijab[r,iroot] += np.einsum('ca,ijcb->ijab',int12,dict_t2[r,iroot])
+      int12 = -2.0*np.einsum('dclk,ld,ka->ca',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],t1,dict_t1[r,iroot])
+      dict_Y_ijab[r,iroot] += np.einsum('ca,ijcb->ijab',int12,t2)
+      int12 = -2.0*np.einsum('dclk,ld,ka->ca',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],dict_t1[r,iroot],t1)
+      dict_Y_ijab[r,iroot] += np.einsum('ca,ijcb->ijab',int12,t2)
+      int12 = None
+      
 ##----------------------------------------------------------------------------------------------------------##
          #Diagrams and intermediates which include triple excitations (iCCSDn renormalization terms)#
 ##----------------------------------------------------------------------------------------------------------##
@@ -256,10 +428,10 @@ def calc_excitation_energy(isym, nroot):
         #dict_Y_ia[r,iroot] += amplitude_response.inserted_diag_Sv_t1(dict_t1[r,iroot],II_vv)
         #dict_Y_ia[r,iroot] += amplitude_response.inserted_diag_Sv_t1(t1,II_vv_new)
 
-        dict_Y_ijab[r,iroot] += amplitude_response.inserted_diag_So(dict_t2[r,iroot],II_oo)
-        dict_Y_ijab[r,iroot] += amplitude_response.inserted_diag_So(t2,II_oo_new)
-        dict_Y_ijab[r,iroot] += amplitude_response.inserted_diag_Sv(dict_t2[r,iroot],II_vv)
-        dict_Y_ijab[r,iroot] += amplitude_response.inserted_diag_Sv(t2,II_vv_new)
+        dict_Y_ijab[r,iroot] += amplitude_response.inserted_diag_So(dict_t2[r,iroot],II_oo)   ## (So_T)c terms which simulates triples
+        dict_Y_ijab[r,iroot] += amplitude_response.inserted_diag_So(t2,II_oo_new)           ## to renormalize the t2
+        dict_Y_ijab[r,iroot] += amplitude_response.inserted_diag_Sv(dict_t2[r,iroot],II_vv)   ## (Sv_T)c terms which simulates triples
+        dict_Y_ijab[r,iroot] += amplitude_response.inserted_diag_Sv(t2,II_vv_new)           ## to renormalize the t2
       
       dict_Y_ijab[r,iroot] = cc_symmetrize.symmetrize(dict_Y_ijab[r,iroot])
         
@@ -280,8 +452,8 @@ def calc_excitation_energy(isym, nroot):
         dict_Y_iuab[r,iroot] += amplitude_response.w2_diag_Sv_response(II_vvvo,II_ovoo3,II_vvvo3,dict_t2[r,iroot])  ##(v_S_t)c -----> R_iuab (diag + off-diag) 
         dict_Y_iuab[r,iroot] += amplitude_response.w2_diag_Sv_response(II_vvvo_new,II_ovoo3_new,II_vvvo3_new,t2)    ##where both diag and off-diag terms are there also these are with two-body int.
 
-        dict_Y_iuab[r,iroot] += amplitude_response.nonlinear_Sv_response(II_vv,dict_Sv[r,iroot]) ##Non linear terms of Sv
-        dict_Y_iuab[r,iroot] += amplitude_response.nonlinear_Sv_response(II_vv_new,Sv)
+        #dict_Y_iuab[r,iroot] += amplitude_response.nonlinear_Sv_response(II_vv,dict_Sv[r,iroot]) ##Non linear terms of Sv
+        #dict_Y_iuab[r,iroot] += amplitude_response.nonlinear_Sv_response(II_vv_new,Sv)
       
 ##----------------------------------------------------------------------------------------------------------##
                                       #A_kappa So and T sector# 
@@ -298,8 +470,8 @@ def calc_excitation_energy(isym, nroot):
         dict_Y_ijav[r,iroot] += amplitude_response.w2_diag_So_response(II_ovoo,II_vvvo2,II_ovoo2,dict_t2[r,iroot]) ##(v_S_t)c -----> R_ijav 
         dict_Y_ijav[r,iroot] += amplitude_response.w2_diag_So_response(II_ovoo_new,II_vvvo2_new,II_ovoo2_new,t2)  ##where both diag and off-diag terms are there also these are with two-body int.
 
-        dict_Y_ijav[r,iroot] += amplitude_response.nonlinear_So_response(II_oo,dict_So[r,iroot])     ##Non linear terms of So
-        dict_Y_ijav[r,iroot] += amplitude_response.nonlinear_So_response(II_oo_new,So)
+        #dict_Y_ijav[r,iroot] += amplitude_response.nonlinear_So_response(II_oo,dict_So[r,iroot])     ##Non linear terms of So
+        #dict_Y_ijav[r,iroot] += amplitude_response.nonlinear_So_response(II_oo_new,So)
       
 ##----------------------------------------------------------------------------------------------------------##
                                 #Ruling out the linear dependency# 
@@ -313,9 +485,6 @@ def calc_excitation_energy(isym, nroot):
           dict_Y_iuab[r,iroot][:,n,:,n] = 0.0
           dict_Y_iuab[r,iroot][:,n,n,:] = 0.0
         
-        #dict_Y_ijav[r,iroot][occ-o_act:occ,occ-o_act:occ,:v_act,:] = 0.0
-        #dict_Y_iuab[r,iroot][occ-o_act:occ,:,:v_act,:v_act] = 0.0
-
 ##----------------------------------------------------------------------------------##
                          #Construction of full B matrix#
 ##----------------------------------------------------------------------------------##
@@ -380,7 +549,7 @@ def calc_excitation_energy(isym, nroot):
       for jroot in range(0,nroot):
         loc1 = r*nroot+iroot
         loc2 = r*nroot+jroot
-  
+ 
         B_Y_ia[loc1,loc2] = 2.0*np.einsum('ia,ia',dict_t1[r,iroot],dict_Y_ia[r,jroot])
         B_Y_ijab[loc1,loc2] = 2.0*np.einsum('ijab,ijab',dict_t2[r,iroot],dict_Y_ijab[r,jroot])-np.einsum('ijba,ijab',dict_t2[r,iroot],dict_Y_ijab[r,jroot])
 
@@ -571,16 +740,16 @@ def calc_excitation_energy(isym, nroot):
       
         for i in range(0,occ):
           for a in range(0,virt):
-            if(abs(dict_t1[r,iroot][i,a]) > 5.0*10e-3): 
-              print "Highest t1 for root  " ,iroot, " is   ", i,"-->  ", a+occ,"   ", dict_t1[r,iroot][i,a] 
+            if(abs(dict_x_t1[r,iroot][i,a]) > 5.0*10e-3): 
+              print "Highest t1 for root  " ,iroot, " is   ", i,"-->  ", a+occ,"   ", dict_x_t1[r,iroot][i,a] 
 
         print "---------------------------------"
         for i in range(0,occ):
           for j in range(0,occ):
             for a in range(0,virt):
               for b in range(0,a+1):
-                if(abs(dict_t2[r,iroot][i,j,a,b]) > 1.0*10e-2): 
-                  print "Highest t2 for root  " ,iroot, " is   ", i,"  ",j,"-->  ", a+occ,"  ",b+occ,"   ", dict_t2[r,iroot][i,j,a,b] 
+                if(abs(dict_x_t2[r,iroot][i,j,a,b]) > 1.0*10e-2): 
+                  print "Highest t2 for root  " ,iroot, " is   ", i,"  ",j,"-->  ", a+occ,"  ",b+occ,"   ", dict_x_t2[r,iroot][i,j,a,b] 
 
         print "---------------------------------"
         if (tiCCSD):
@@ -588,16 +757,16 @@ def calc_excitation_energy(isym, nroot):
             for u in range(0,v_act):
               for a in range(0,virt):
                 for b in range(0,a+1):
-                  if(abs(dict_Sv[r,iroot][i,u,a,b]) > 1.0*10e-2): 
-                    print "Highest Sv for root  " ,iroot, " is   ", i,"  ",u+occ,"-->  ", a+occ,"  ",b+occ,"   ", dict_Sv[r,iroot][i,u,a,b] 
+                  if(abs(dict_x_Sv[r,iroot][i,u,a,b]) > 1.0*10e-2): 
+                    print "Highest Sv for root  " ,iroot, " is   ", i,"  ",u+occ,"-->  ", a+occ,"  ",b+occ,"   ", dict_x_Sv[r,iroot][i,u,a,b] 
 
           print "---------------------------------"
           for i in range(0,occ):
             for j in range(0,occ):
               for a in range(0,virt):
                 for v in range(0,o_act):
-                  if(abs(dict_So[r,iroot][i,j,a,v]) > 1.0*10e-2): 
-                    print "Highest So for root  " ,iroot, " is   ", i,"  ",j,"-->  ", a+occ,"  ",v+occ-o_act,"   ", dict_So[r,iroot][i,j,a,v] 
+                  if(abs(dict_x_So[r,iroot][i,j,a,v]) > 1.0*10e-2): 
+                    print "Highest So for root  " ,iroot, " is   ", i,"  ",j,"-->  ", a+occ,"  ",v+occ-o_act,"   ", dict_x_So[r,iroot][i,j,a,v] 
         print "---------------------------------"
         print "---------------------------------"
         print "           "
@@ -726,9 +895,6 @@ def calc_excitation_energy(isym, nroot):
           dict_norm_Sv[iroot][:,n,:,n] = 0.0
           dict_norm_Sv[iroot][:,n,n,:] = 0.0
          
-        #dict_norm_So[iroot][occ-o_act:occ,occ-o_act:occ,:v_act,:] = 0.0
-        #dict_norm_Sv[iroot][occ-o_act:occ,:,:v_act,:v_act] = 0.0
-
         dict_So[r+1,iroot] = dict_norm_So[iroot]
         dict_Sv[r+1,iroot] = dict_norm_Sv[iroot]
  

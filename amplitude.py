@@ -283,9 +283,9 @@ def v_sv_t_contraction_diag(t2,II_vo):
 def w2_diag_So(II_ovoo,II_vvvo2,II_ovoo2,t2):
   R_ijav = 2.0*np.einsum('jdvw,wida->ijav',II_ovoo,t2)
   R_ijav += -np.einsum('jdvw,wiad->ijav',II_ovoo,t2) #diagonal terms
-  #R_ijav += np.einsum('dxav,ijdx->ijav',II_vvvo2,t2) #off-diagonal terms
-  #R_ijav += -np.einsum('ixkv,kjax->ijav',II_ovoo2,t2)
-  #R_ijav += -np.einsum('jxkv,kixa->ijav',II_ovoo2,t2)
+  R_ijav += np.einsum('dxav,ijdx->ijav',II_vvvo2,t2) #off-diagonal terms
+  R_ijav += -np.einsum('ixkv,kjax->ijav',II_ovoo2,t2)
+  R_ijav += -np.einsum('jxkv,kixa->ijav',II_ovoo2,t2)
   return R_ijav
 
   R_ijav = None
@@ -297,9 +297,9 @@ def w2_diag_So(II_ovoo,II_vvvo2,II_ovoo2,t2):
 def w2_diag_Sv(II_vvvo,II_ovoo3,II_vvvo3,t2):
   R_iuab = 2.0*np.einsum('uxbl,ilax->iuab',II_vvvo,t2)
   R_iuab += -np.einsum('uxbl,ilxa->iuab',II_vvvo,t2)
-  #R_iuab += -np.einsum('iulw,lwab->iuab',II_ovoo3,t2)
-  #R_iuab += -np.einsum('duaw,iwdb->iuab',II_vvvo3,t2) 
-  #R_iuab += -np.einsum('dubw,iwad->iuab',II_vvvo3,t2) 
+  R_iuab += -np.einsum('iulw,lwab->iuab',II_ovoo3,t2)
+  R_iuab += -np.einsum('duaw,iwdb->iuab',II_vvvo3,t2) 
+  R_iuab += -np.einsum('dubw,iwad->iuab',II_vvvo3,t2) 
   return R_iuab
 
   R_iuab = None

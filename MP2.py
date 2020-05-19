@@ -29,6 +29,7 @@ o_act = inp.o_act
 v_act = inp.v_act
 hf_mo_E = trans_mo.hf_mo_E
 E_hf = trans_mo.E_hf
+orb_symm = trans_mo.orb_symm
 Fock_mo = trans_mo.Fock_mo
 occ = n
 virt = nao-n
@@ -46,6 +47,7 @@ if nfo > 0:
   hf_mo_E = cp.deepcopy(hf_mo_E[nfo:])
   Fock_mo = cp.deepcopy(Fock_mo[nfo:,nfo:])
   nao = nao - nfo
+  orb_symm = orb_symm[nfo:]
 
 if nfv > 0:
   twoelecint_mo = cp.deepcopy(twoelecint_mo[:-nfv,:-nfv,:-nfv,:-nfv])
@@ -53,6 +55,8 @@ if nfv > 0:
   hf_mo_E = hf_mo_E[:-nfv]
   nao = nao - nfv - nfo
   virt = virt - nfv  
+
+print hf_mo_E
 
 ##----------------------------------------------------------------------##
                   #Set up the denominator and t/s#
