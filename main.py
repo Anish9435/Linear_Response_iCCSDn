@@ -282,13 +282,13 @@ for x in range(0,n_iter):
     
     R_iuab = amplitude.Sv_diagram_vs_contraction(Sv)
     R_iuab += amplitude.Sv_diagram_vt_contraction(t2)
-    #R_iuab += amplitude.T1_contribution_Sv(t1)
+    R_iuab += amplitude.T1_contribution_Sv(t1)
     R_iuab += amplitude.v_so_t_contraction_diag(t2,II_ov)
     R_iuab += amplitude.w2_diag_Sv(II_vvvo,II_ovoo3,II_vvvo3,t2)
 
     R_ijav = amplitude.So_diagram_vs_contraction(So)
     R_ijav += amplitude.So_diagram_vt_contraction(t2)
-    #R_ijav += amplitude.T1_contribution_So(t1)
+    R_ijav += amplitude.T1_contribution_So(t1)
     R_ijav += amplitude.v_sv_t_contraction_diag(t2,II_vo)
     R_ijav += amplitude.w2_diag_So(II_ovoo,II_vvvo2,II_ovoo2,t2)
     

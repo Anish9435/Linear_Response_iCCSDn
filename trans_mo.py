@@ -3,7 +3,7 @@
                                    
                                            # Routine to calculate Hatree-Fock energy and verify with pyscf routine #
                                                 # Author: Soumi Tribedi, Anish Chakraborty, Rahul Maitra #
-                                                                  # Date - 10th Dec, 2019 # 
+                                                                  # Date - Dec, 2018 # 
 
                    ##----------------------------------------------------------------------------------------------------------------##
 
@@ -17,7 +17,9 @@ import pyscf
 import inp
 
 from pyscf import gto, scf, cc
+from pyscf import ao2mo
 from pyscf.cc import ccsd_t
+from pyscf.ao2mo.addons import load
 from pyscf import symm
 
 mol = inp.mol
@@ -40,7 +42,7 @@ V = mol.intor('cint1e_nuc_sph')
 v2e = mol.intor('cint2e_sph').reshape((nao,)*4)
 
 ##--------------------------------------------------------------##
-                ####  Hartree-Fock  ####
+                ####  Hartree-Fock pyscf  ####
 ##--------------------------------------------------------------##
 
 mf = scf.RHF(mol).run()
@@ -48,15 +50,15 @@ E_hf = mf.e_tot
 hf_mo_E = mf.mo_energy
 hf_mo_coeff = mf.mo_coeff
 Fock_mo = np.zeros((nao,nao))
+print hf_mo_E
 
 ##--------------------------------------------------------------##
              #Orbital symmetry of the molecule#
 ##--------------------------------------------------------------##
 
 orb_symm = []
-mo = symm.symmetrize_space(mol, mf.mo_coeff)
-orb_symm = symm.label_orb_symm_num(mol, mol.irrep_name, mol.symm_orb, mo)
-
+mo = symm.symmetrize_orb(mol, mf.mo_coeff)
+orb_symm = symm.label_orb_symm(mol, mol.irrep_name, mol.symm_orb, mo)
 
 ##--------------------------------------------------------------##
              #Set up initial Fock matrix#
@@ -75,13 +77,20 @@ oneelecint_mo = np.einsum('ab,ac,cd->bd',hf_mo_coeff,Fock,hf_mo_coeff)
          #Transform 2 electron integral to MO Basis#
 ##--------------------------------------------------------------##
 
-twoelecint_1 = np.einsum('zs,wxyz->wxys',hf_mo_coeff,v2e)
-twoelecint_2 = np.einsum('yr,wxys->wxrs',hf_mo_coeff,twoelecint_1)
-twoelecint_3 = np.einsum('xq,wxrs->wqrs',hf_mo_coeff,twoelecint_2)
-twoelecint_mo = np.einsum('wp,wqrs->pqrs',hf_mo_coeff,twoelecint_3)
-twoelecint_1 = None
-twoelecint_2 = None
-twoelecint_3 = None
+if inp.integral_trans == 'incore':
+  twoelecint_1 = np.einsum('zs,wxyz->wxys',hf_mo_coeff,v2e)
+  twoelecint_2 = np.einsum('yr,wxys->wxrs',hf_mo_coeff,twoelecint_1)
+  twoelecint_3 = np.einsum('xq,wxrs->wqrs',hf_mo_coeff,twoelecint_2)
+  twoelecint_mo = np.einsum('wp,wqrs->pqrs',hf_mo_coeff,twoelecint_3)
+  twoelecint_1 = None
+  twoelecint_2 = None
+  twoelecint_3 = None
+
+if inp.integral_trans == 'outcore':
+  ao2mo.outcore.full(mol,hf_mo_coeff,'2eint.h5',aosym='s4',max_memory=8000,verbose=2)
+
+  with load('2eint.h5') as twoelecint_mo:
+    twoelecint_mo = ao2mo.restore(1,twoelecint_mo,nao)
 
 ##--------------------------------------------------------------##
                   #Verify integrals#
@@ -107,8 +116,10 @@ def check_mo():
   if abs(Escf_mo - E_hf)<= 1E-6 :
     print "MO conversion successful"
   return
+
 print Escf_mo,E_hf
 print hf_mo_E
+print nelec
 check_mo()
 
 ##--------------------------------------------------------------##

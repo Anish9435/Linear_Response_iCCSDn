@@ -213,6 +213,14 @@ def get_orb_sym(orb_sym_pyscf, sym):
   if (sym=='C1'):
     sym_num_comm[0] = 0
 
+  if (sym=='C2'):
+    sym_num_comm[0] = 0
+    sym_num_comm[1] = 1
+
+  if (sym=='Cs'):
+    sym_num_comm[0] = 0
+    sym_num_comm[1] = 1
+
   orb_sym = []
   for i in orb_sym_pyscf:
     orb_sym.append(sym_num_comm[i])
