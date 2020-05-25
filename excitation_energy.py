@@ -638,15 +638,24 @@ def calc_excitation_energy(isym, nroot):
         dict_x_So[r,iroot] = np.zeros((occ,occ,virt,o_act))
         dict_x_Sv[r,iroot] = np.zeros((occ,v_act,virt,virt))
   
-      for m in range(0,r+1):
-        for jroot in range(0,nroot):
-          loc = m*nroot+jroot
-          dict_x_t1[r,iroot] += np.linalg.multi_dot([dict_coeff_total[iroot][loc],dict_t1[m,jroot]])
-          dict_x_t2[r,iroot] += np.linalg.multi_dot([dict_coeff_total[iroot][loc],dict_t2[m,jroot]])
+#     for m in range(0,r+1):
+#       for jroot in range(0,nroot):
+#         loc = m*nroot+jroot
+#         dict_x_t1[r,iroot] += np.linalg.multi_dot([dict_coeff_total[iroot][loc],dict_t1[m,jroot]])
+#         dict_x_t2[r,iroot] += np.linalg.multi_dot([dict_coeff_total[iroot][loc],dict_t2[m,jroot]])
+#         if (tiCCSD):
+#           dict_x_So[r,iroot] += np.linalg.multi_dot([dict_coeff_total[iroot][loc],dict_So[m,jroot]])
+#           dict_x_Sv[r,iroot] += np.linalg.multi_dot([dict_coeff_total[iroot][loc],dict_Sv[m,jroot]])
 
-          if (tiCCSD):
-            dict_x_So[r,iroot] += np.linalg.multi_dot([dict_coeff_total[iroot][loc],dict_So[m,jroot]])
-            dict_x_Sv[r,iroot] += np.linalg.multi_dot([dict_coeff_total[iroot][loc],dict_Sv[m,jroot]])
+
+      for m in range(0,r+1):
+        loc = m*nroot+iroot
+        dict_x_t1[r,iroot] += np.linalg.multi_dot([dict_coeff_total[iroot][loc],dict_t1[m,iroot]])
+        dict_x_t2[r,iroot] += np.linalg.multi_dot([dict_coeff_total[iroot][loc],dict_t2[m,iroot]])
+
+        if (tiCCSD):
+          dict_x_So[r,iroot] += np.linalg.multi_dot([dict_coeff_total[iroot][loc],dict_So[m,iroot]])
+          dict_x_Sv[r,iroot] += np.linalg.multi_dot([dict_coeff_total[iroot][loc],dict_Sv[m,iroot]])
 
       lin_norm = 2.0*np.einsum('ia,ia',dict_x_t1[r,iroot],dict_x_t1[r,iroot])
       lin_norm += 2.0*np.einsum('ijab,ijab',dict_x_t2[r,iroot],dict_x_t2[r,iroot]) - np.einsum('ijab,ijba',dict_x_t2[r,iroot],dict_x_t2[r,iroot])
@@ -866,7 +875,7 @@ def calc_excitation_energy(isym, nroot):
 
       norm_total = math.sqrt(ortho_norm)
 
-      if (norm_total > 1e-9):
+      if (norm_total > 1e-12):
         dict_norm_t1[iroot] = dict_ortho_t1[iroot]/norm_total
         dict_norm_t2[iroot] = dict_ortho_t2[iroot]/norm_total
 

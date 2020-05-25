@@ -59,6 +59,7 @@ print hf_mo_E
 orb_symm = []
 mo = symm.symmetrize_orb(mol, mf.mo_coeff)
 orb_symm = symm.label_orb_symm(mol, mol.irrep_name, mol.symm_orb, mo)
+#orb_symm = symm.label_orb_symm(mol, mol.irrep_id, mol.symm_orb, mo)
 
 ##--------------------------------------------------------------##
              #Set up initial Fock matrix#
