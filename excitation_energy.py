@@ -32,6 +32,7 @@ import cc_symmetrize
 import cc_update
 import main
 import math
+import scipy
 
 ##---------------------------------------------------------------------------##
                      #Import important functionalities/variables#
@@ -52,8 +53,10 @@ v_act = inp.v_act
 n_iter = inp.n_iter
 lrt_iter = inp.lrt_iter
 n_davidson = inp.n_davidson
+hf_mo_E = trans_mo.hf_mo_E
 D1 = 1.0*MP2.D1
 D2 = 1.0*MP2.D2
+
 
 if (tiCCSD):
   So = main.So
@@ -61,7 +64,7 @@ if (tiCCSD):
   Do = 1.0*MP2.Do 
   Dv = 1.0*MP2.Dv 
 
-conv = 5*(10**(-inp.LR_conv))
+conv = 4*(10**(-inp.LR_conv))
 
 sym = trans_mo.mol.symmetry
 orb_sym_pyscf = MP2.orb_symm
@@ -198,8 +201,8 @@ def calc_excitation_energy(isym, nroot):
   
 ##---------------------------------------------------------------------------------------------------------##
                                       #higher order one-body terms#
-##---------------------------------------------------------------------------------------------------------##
-       
+##------------------------------------------------------------------------------------------------------##
+      '''
                          ##--------------------------------------##
                                 ##diagram non-linear m## 
                          ##--------------------------------------##
@@ -221,7 +224,7 @@ def calc_excitation_energy(isym, nroot):
       dict_Y_ia[r,iroot] += -np.einsum('ik,ka->ia',int_one_body2,t1)
       int_one_body2 = 2.0*np.einsum('dclk,ld,ic->ik',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],dict_t1[r,iroot],t1)
       dict_Y_ia[r,iroot] += -np.einsum('ik,ka->ia',int_one_body2,t1)
-      
+      '''
 ##---------------------------------------------------------------------------------------------------------##
                                #Further update of the intermdiates#
 ##---------------------------------------------------------------------------------------------------------##
@@ -251,7 +254,7 @@ def calc_excitation_energy(isym, nroot):
 ##---------------------------------------------------------------------------------------------------------##
                                       #higher order terms#
 ##---------------------------------------------------------------------------------------------------------##
-      
+      '''   
                          ##--------------------------------------##
                                 ##diagram non-linear 30## 
                          ##--------------------------------------##
@@ -398,7 +401,7 @@ def calc_excitation_energy(isym, nroot):
       int12 = -2.0*np.einsum('dclk,ld,ka->ca',twoelecint_mo[occ:nao,occ:nao,:occ,:occ],dict_t1[r,iroot],t1)
       dict_Y_ijab[r,iroot] += np.einsum('ca,ijcb->ijab',int12,t2)
       int12 = None
-      
+      ''' 
 ##----------------------------------------------------------------------------------------------------------##
          #Diagrams and intermediates which include triple excitations (iCCSDn renormalization terms)#
 ##----------------------------------------------------------------------------------------------------------##
@@ -424,9 +427,9 @@ def calc_excitation_energy(isym, nroot):
 ##----------------------------------------------------------------------------------------------------------##
 
         #dict_Y_ia[r,iroot] += amplitude_response.inserted_diag_So_t1(dict_t1[r,iroot],II_oo)
-        #dict_Y_ia[r,iroot] += amplitude_response.inserted_diag_So_t1(t1,II_oo_new)
+        dict_Y_ia[r,iroot] += amplitude_response.inserted_diag_So_t1(t1,II_oo_new)
         #dict_Y_ia[r,iroot] += amplitude_response.inserted_diag_Sv_t1(dict_t1[r,iroot],II_vv)
-        #dict_Y_ia[r,iroot] += amplitude_response.inserted_diag_Sv_t1(t1,II_vv_new)
+        dict_Y_ia[r,iroot] += amplitude_response.inserted_diag_Sv_t1(t1,II_vv_new)
 
         dict_Y_ijab[r,iroot] += amplitude_response.inserted_diag_So(dict_t2[r,iroot],II_oo)   ## (So_T)c terms which simulates triples
         dict_Y_ijab[r,iroot] += amplitude_response.inserted_diag_So(t2,II_oo_new)           ## to renormalize the t2
@@ -446,11 +449,11 @@ def calc_excitation_energy(isym, nroot):
         dict_Y_iuab[r,iroot] += amplitude_response.Sv_diagram_vt_contraction_response(dict_t2[r,iroot]) ##(V_T2)c terms --> R_iuab
         dict_Y_iuab[r,iroot] += amplitude_response.T1_contribution_Sv_response(dict_t1[r,iroot])       ##(V_T1)c terms --> R_iuab
 
-        dict_Y_iuab[r,iroot] += amplitude_response.v_so_t_contraction_diag(dict_t2[r,iroot],II_ov) ##(V_So_t)c ----> R_iuab where there is connection b/w So and T
-        dict_Y_iuab[r,iroot] += amplitude_response.v_so_t_contraction_diag(t2,II_ov_new)
+        #dict_Y_iuab[r,iroot] += amplitude_response.v_so_t_contraction_diag(dict_t2[r,iroot],II_ov) ##(V_So_t)c ----> R_iuab where there is connection b/w So and T
+        #dict_Y_iuab[r,iroot] += amplitude_response.v_so_t_contraction_diag(t2,II_ov_new)
 
-        dict_Y_iuab[r,iroot] += amplitude_response.w2_diag_Sv_response(II_vvvo,II_ovoo3,II_vvvo3,dict_t2[r,iroot])  ##(v_S_t)c -----> R_iuab (diag + off-diag) 
-        dict_Y_iuab[r,iroot] += amplitude_response.w2_diag_Sv_response(II_vvvo_new,II_ovoo3_new,II_vvvo3_new,t2)    ##where both diag and off-diag terms are there also these are with two-body int.
+        #dict_Y_iuab[r,iroot] += amplitude_response.w2_diag_Sv_response(II_vvvo,II_ovoo3,II_vvvo3,dict_t2[r,iroot])  ##(v_S_t)c -----> R_iuab (diag + off-diag) 
+        #dict_Y_iuab[r,iroot] += amplitude_response.w2_diag_Sv_response(II_vvvo_new,II_ovoo3_new,II_vvvo3_new,t2)    ##where both diag and off-diag terms are there also these are with two-body int.
 
         #dict_Y_iuab[r,iroot] += amplitude_response.nonlinear_Sv_response(II_vv,dict_Sv[r,iroot]) ##Non linear terms of Sv
         #dict_Y_iuab[r,iroot] += amplitude_response.nonlinear_Sv_response(II_vv_new,Sv)
@@ -464,11 +467,11 @@ def calc_excitation_energy(isym, nroot):
         dict_Y_ijav[r,iroot] += amplitude_response.So_diagram_vt_contraction_response(dict_t2[r,iroot])  ##(V_T2)c terms --> R_ijav
         dict_Y_ijav[r,iroot] += amplitude_response.T1_contribution_So_response(dict_t1[r,iroot])         ##(V_T1)c terms --> R_ijav
 
-        dict_Y_ijav[r,iroot] += amplitude_response.v_sv_t_contraction_diag(dict_t2[r,iroot],II_vo)   ##(V_Sv_t)c ----> R_ijav where there is connection b/w Sv and T
-        dict_Y_ijav[r,iroot] += amplitude_response.v_sv_t_contraction_diag(t2,II_vo_new)    ##one body intermediate and all are off diagonal terms
+        #dict_Y_ijav[r,iroot] += amplitude_response.v_sv_t_contraction_diag(dict_t2[r,iroot],II_vo)   ##(V_Sv_t)c ----> R_ijav where there is connection b/w Sv and T
+        #dict_Y_ijav[r,iroot] += amplitude_response.v_sv_t_contraction_diag(t2,II_vo_new)    ##one body intermediate and all are off diagonal terms
 
-        dict_Y_ijav[r,iroot] += amplitude_response.w2_diag_So_response(II_ovoo,II_vvvo2,II_ovoo2,dict_t2[r,iroot]) ##(v_S_t)c -----> R_ijav 
-        dict_Y_ijav[r,iroot] += amplitude_response.w2_diag_So_response(II_ovoo_new,II_vvvo2_new,II_ovoo2_new,t2)  ##where both diag and off-diag terms are there also these are with two-body int.
+        #dict_Y_ijav[r,iroot] += amplitude_response.w2_diag_So_response(II_ovoo,II_vvvo2,II_ovoo2,dict_t2[r,iroot]) ##(v_S_t)c -----> R_ijav 
+        #dict_Y_ijav[r,iroot] += amplitude_response.w2_diag_So_response(II_ovoo_new,II_vvvo2_new,II_ovoo2_new,t2)  ##where both diag and off-diag terms are there also these are with two-body int.
 
         #dict_Y_ijav[r,iroot] += amplitude_response.nonlinear_So_response(II_oo,dict_So[r,iroot])     ##Non linear terms of So
         #dict_Y_ijav[r,iroot] += amplitude_response.nonlinear_So_response(II_oo_new,So)
@@ -562,15 +565,19 @@ def calc_excitation_energy(isym, nroot):
     if (tiCCSD):
       B_total += B_Y_ijav+B_Y_iuab
 
+    #print "B Matrix is:", B_total
+
 ##-------------------------------------------------------------------------------------##
                           #Diagonalization of the B matrix#
 ##-------------------------------------------------------------------------------------##
 
-    w_total, vects_total = np.linalg.eig(B_total)
+    w_total, vects_total = scipy.linalg.eig(B_total)
     
     
     if (np.all(w_total).imag <= 1e-8):
       w_total = w_total.real    
+    #print "Eigenvectors:", vects_total 
+    #print "Eigenvalues:", w_total 
 
 ##--------------------------------------------------------------------------------------##
                  #Calculation of multiple sorted eigenvalue as#
@@ -657,12 +664,23 @@ def calc_excitation_energy(isym, nroot):
           dict_x_So[r,iroot] += np.linalg.multi_dot([dict_coeff_total[iroot][loc],dict_So[m,iroot]])
           dict_x_Sv[r,iroot] += np.linalg.multi_dot([dict_coeff_total[iroot][loc],dict_Sv[m,iroot]])
 
-      lin_norm = 2.0*np.einsum('ia,ia',dict_x_t1[r,iroot],dict_x_t1[r,iroot])
-      lin_norm += 2.0*np.einsum('ijab,ijab',dict_x_t2[r,iroot],dict_x_t2[r,iroot]) - np.einsum('ijab,ijba',dict_x_t2[r,iroot],dict_x_t2[r,iroot])
+      #lin_norm = 2.0*np.einsum('ia,ia',dict_x_t1[r,iroot],dict_x_t1[r,iroot])
+      #lin_norm += 2.0*np.einsum('ijab,ijab',dict_x_t2[r,iroot],dict_x_t2[r,iroot]) - np.einsum('ijab,ijba',dict_x_t2[r,iroot],dict_x_t2[r,iroot])
 
-      if (tiCCSD):
-        lin_norm += 2.0*np.einsum('ijav,ijav',dict_x_So[r,iroot],dict_x_So[r,iroot]) - np.einsum('ijav,jiav',dict_x_So[r,iroot],dict_x_So[r,iroot])
-        lin_norm += 2.0*np.einsum('iuab,iuab',dict_x_Sv[r,iroot],dict_x_Sv[r,iroot]) - np.einsum('iuab,iuba',dict_x_Sv[r,iroot],dict_x_Sv[r,iroot])
+      #if (tiCCSD):
+      #  lin_norm += 2.0*np.einsum('ijav,ijav',dict_x_So[r,iroot],dict_x_So[r,iroot]) - np.einsum('ijav,jiav',dict_x_So[r,iroot],dict_x_So[r,iroot])
+      #  lin_norm += 2.0*np.einsum('iuab,iuab',dict_x_Sv[r,iroot],dict_x_Sv[r,iroot]) - np.einsum('iuab,iuba',dict_x_Sv[r,iroot],dict_x_Sv[r,iroot])
+
+      #II_int_so = intermediates_response.int_norm_so(dict_x_So[r,iroot])
+      #II_int_sv = intermediates_response.int_norm_sv(dict_x_Sv[r,iroot])
+      
+      #if (inp.LR_type == 'CCSD'):
+      #  lin_norm = davidson.norm_ccsd(dict_x_t1[r,iroot],dict_x_t2[r,iroot])
+
+      if(tiCCSD):
+        II_int_so = intermediates_response.int_norm_so(dict_x_So[r,iroot])
+        II_int_sv = intermediates_response.int_norm_sv(dict_x_Sv[r,iroot])
+        lin_norm = davidson.norm(dict_x_t1[r,iroot],dict_x_t2[r,iroot],II_int_so,II_int_sv)
 
       norm = math.sqrt(lin_norm)
 
@@ -866,12 +884,20 @@ def calc_excitation_energy(isym, nroot):
           dict_ortho_Sv[iroot] += -overlap*dict_norm_Sv[jroot]  
 
 
-      ortho_norm = 2.0*np.einsum('ia,ia',dict_ortho_t1[iroot],dict_ortho_t1[iroot])
-      ortho_norm += 2.0*np.einsum('ijab,ijab',dict_ortho_t2[iroot],dict_ortho_t2[iroot]) - np.einsum('ijab,ijba',dict_ortho_t2[iroot],dict_ortho_t2[iroot])
+      #ortho_norm = 2.0*np.einsum('ia,ia',dict_ortho_t1[iroot],dict_ortho_t1[iroot])
+      #ortho_norm += 2.0*np.einsum('ijab,ijab',dict_ortho_t2[iroot],dict_ortho_t2[iroot]) - np.einsum('ijab,ijba',dict_ortho_t2[iroot],dict_ortho_t2[iroot])
 
-      if (tiCCSD):
-        ortho_norm += 2.0*np.einsum('ijav,ijav',dict_ortho_So[iroot],dict_ortho_So[iroot]) - np.einsum('ijav,jiav',dict_ortho_So[iroot],dict_ortho_So[iroot])
-        ortho_norm += 2.0*np.einsum('iuab,iuab',dict_ortho_Sv[iroot],dict_ortho_Sv[iroot]) - np.einsum('iuab,iuba',dict_ortho_Sv[iroot],dict_ortho_Sv[iroot])
+      #if (tiCCSD):
+      #  ortho_norm += 2.0*np.einsum('ijav,ijav',dict_ortho_So[iroot],dict_ortho_So[iroot]) - np.einsum('ijav,jiav',dict_ortho_So[iroot],dict_ortho_So[iroot])
+      #  ortho_norm += 2.0*np.einsum('iuab,iuab',dict_ortho_Sv[iroot],dict_ortho_Sv[iroot]) - np.einsum('iuab,iuba',dict_ortho_Sv[iroot],dict_ortho_Sv[iroot])
+      
+      #if (inp.LR_type == 'CCSD'): 
+      #  ortho_norm = davidson.norm_ccsd(dict_ortho_t1[iroot],dict_ortho_t2[iroot])
+
+      if(tiCCSD):
+        II_so = intermediates_response.int_norm_so(dict_ortho_So[iroot])
+        II_sv = intermediates_response.int_norm_sv(dict_ortho_Sv[iroot])
+        ortho_norm = davidson.norm(dict_ortho_t1[iroot],dict_ortho_t2[iroot],II_so,II_sv)
 
       norm_total = math.sqrt(ortho_norm)
 
@@ -911,12 +937,17 @@ def calc_excitation_energy(isym, nroot):
                     #Sanity check to find the final norm#
 ##----------------------------------------------------------------------------##
   
-      nrm = 2.0*np.einsum('ia,ia',dict_t1[r+1,iroot],dict_t1[r+1,iroot]) 
-      nrm += 2.0*np.einsum('ijab,ijab',dict_t2[r+1,iroot],dict_t2[r+1,iroot]) - np.einsum('ijab,ijba',dict_t2[r+1,iroot],dict_t2[r+1,iroot]) 
+      #nrm = 2.0*np.einsum('ia,ia',dict_t1[r+1,iroot],dict_t1[r+1,iroot]) 
+      #nrm += 2.0*np.einsum('ijab,ijab',dict_t2[r+1,iroot],dict_t2[r+1,iroot]) - np.einsum('ijab,ijba',dict_t2[r+1,iroot],dict_t2[r+1,iroot]) 
 
-      if (tiCCSD):
-        nrm += 2.0*np.einsum('ijav,ijav',dict_So[r+1,iroot],dict_So[r+1,iroot]) - np.einsum('ijav,jiav',dict_So[r+1,iroot],dict_So[r+1,iroot]) 
-        nrm += 2.0*np.einsum('iuab,iuab',dict_Sv[r+1,iroot],dict_Sv[r+1,iroot]) - np.einsum('iuab,iuba',dict_Sv[r+1,iroot],dict_Sv[r+1,iroot])
+      #if (tiCCSD):
+      #  nrm += 2.0*np.einsum('ijav,ijav',dict_So[r+1,iroot],dict_So[r+1,iroot]) - np.einsum('ijav,jiav',dict_So[r+1,iroot],dict_So[r+1,iroot]) 
+      #  nrm += 2.0*np.einsum('iuab,iuab',dict_Sv[r+1,iroot],dict_Sv[r+1,iroot]) - np.einsum('iuab,iuba',dict_Sv[r+1,iroot],dict_Sv[r+1,iroot])
+
+      if(tiCCSD):
+        II_nrm_so = intermediates_response.int_norm_so(dict_So[r+1,iroot])
+        II_nrm_sv = intermediates_response.int_norm_sv(dict_Sv[r+1,iroot])
+        nrm = davidson.norm(dict_t1[r+1,iroot],dict_t2[r+1,iroot],II_nrm_so,II_nrm_sv)
 
       print "final norm:", iroot, nrm 
 

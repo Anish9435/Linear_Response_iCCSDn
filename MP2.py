@@ -99,6 +99,9 @@ if inp.calc == 'ICCD' or inp.calc == 'ILCCD' or inp.calc == 'ICCSD' or inp.calc 
           Do[i,j,a,k-occ+o_act] =  hf_mo_E[i] + hf_mo_E[j] - hf_mo_E[a+occ] + hf_mo_E[k]
           So[i,j,a,k-occ+o_act] = twoelecint_mo[i,j,a+occ,k]/Do[i,j,a,k-occ+o_act]
 
+print np.shape(np.transpose(t2))
+print np.shape(t2)
+
 ##-------------------------------------------------------------------------------------##
                           #Calculation of MP2 energy#
 ##-------------------------------------------------------------------------------------##

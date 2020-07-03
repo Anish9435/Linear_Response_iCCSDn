@@ -16,6 +16,7 @@ import inp
 import math
 import MP2
 import trans_mo
+import intermediates_response
 
 ##---------------------------------------------------------------------##
                     #Group multiplication table#
@@ -260,6 +261,18 @@ def guess_X_man(occ,virt,o_act,v_act,nroot):
 
   return dict_t1,dict_t2,dict_So,dict_Sv
 
+##---------------------------------------------------------------------##
+            #Calculation of norm in excited state#
+##---------------------------------------------------------------------##
+
+
+def norm(t1,t2,II_int_so,II_int_sv):
+  norm = 2.0*np.einsum('ia,ia',t1,t1)
+  norm += 2.0*np.einsum('ijab,ijab',t2,t2) - np.einsum('ijab,ijba',t2,t2)
+  if(tiCCSD):
+    norm = -2.0*np.einsum('edwm,wv,vmed',np.transpose(t2),II_int_so,t2) + np.einsum('dewm,wv,vmed',np.transpose(t2),II_int_so,t2) 
+    norm += 2.0*np.einsum('xelm,ux,lmue',np.transpose(t2),II_int_sv,t2) - np.einsum('xelm,ux,mlue',np.transpose(t2),II_int_sv,t2) 
+  return norm    
 
                          ##---------------------------------------------------------------------------------------------------------------##
                                                                               #THE END#

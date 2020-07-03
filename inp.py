@@ -24,12 +24,11 @@ from pyscf import gto
 mol = pyscf.gto.M(
 verbose = 5,
 output = None,
-#unit='Bohr',
+unit='Bohr',
 atom ='''
-H 0.000000 0.934473 -0.588078
-H 0.000000 -0.934473 -0.588078
-C 0.000000 0.000000 0.000000
-O 0.000000 0.000000 1.221104
+C   0.00000   0.000000   0.00000
+H   0.00000   1.644403   1.32213
+H   0.00000   -1.644403  1.32213
 ''',
 basis = 'ccpvdz',
 symmetry = 'C2v',
@@ -61,7 +60,7 @@ conv = 7
      #Specify convergence criteria for excited state#
 ##---------------------------------------------------------##
 
-LR_conv = 5
+LR_conv = 4
 
 ##---------------------------------------------------------##
       #Specify max number of iteration for ground state#
@@ -73,7 +72,7 @@ n_iter = 300
           #Specify max number of iteration for LRT#
 ##---------------------------------------------------------##
 
-lrt_iter = 200
+lrt_iter = 500
 
 ##---------------------------------------------------------##
                       #Specify DIIS#
@@ -89,8 +88,8 @@ max_diis = 7
     #Currently same for both ground and excited states#
 ##---------------------------------------------------------##
 
-o_act = 4
-v_act = 2
+o_act = 1
+v_act = 1
 
 ##---------------------------------------------------------##
          #Specify number of frozen orbitals#
@@ -105,7 +104,7 @@ nfv = 0
                 #This might need further testing#
 ##---------------------------------------------------------------------------##
 
-n_davidson = 500
+n_davidson = 5
 
 ##-----------------------------------------------------------------------##
              #Number of roots required for each symmetry#
@@ -114,7 +113,7 @@ n_davidson = 500
                        #Specific for LRT#
 ##-----------------------------------------------------------------------##
 
-nroot = [0,0,0,1]
+nroot = [3,0,0,0]
 
 ##---------------------------------------------------------------------------##
                #Specify integral transformation process#

@@ -234,6 +234,24 @@ def T1_contribution_So(t1):
   R_ijav = None
   gc.collect()
 
+##----------------------------------------------------------------------------------------------##
+                      #Non linear response of S towards R_iuab and R_ijav#
+##----------------------------------------------------------------------------------------------##
+
+def nonlinear_So(II_oo,So):
+  R_ijav = np.einsum('ijax,xv->ijav',So,II_oo[occ-o_act:occ,occ-o_act:occ])     #### -(So(H.So)_c)_c term
+  return R_ijav               ###additional -ve for -(So(H.So)_c)_c term 
+
+  R_ijav = None
+  gc.collect()
+
+def nonlinear_Sv(II_vv,Sv):
+  R_iuab = -np.einsum('iwab,uw->iuab',Sv,II_vv[:v_act,:v_act])     #### -(Sv(H,Sv)_c)_c term
+  return R_iuab            ###additional -ve for -(Sv(H.Sv)_c)_c term
+
+  R_iuab = None
+  gc.collect()
+
 ##------------------------------------------------------------------##
               #Explicit diagrams for iCCSDn scheme#
 ##------------------------------------------------------------------##
@@ -251,6 +269,26 @@ def inserted_diag_Sv(t2,II_vv):
   return R_ijab
 
   R_ijab = None
+  II_vv = None
+  gc.collect() 
+
+##------------------------------------------------------------------##
+              #Explicit diagrams for iCCSDn scheme#
+##------------------------------------------------------------------##
+
+def inserted_diag_So_t1(t1,II_oo):
+  R_ia = -np.einsum('ik,ka->ia',II_oo,t1)   
+  return R_ia 
+
+  R_ia = None
+  II_oo = None
+  gc.collect()               ####WHERE X IS T2 OF ZEROTH OR FIRST ORDER AND Y IS THE CORRESPONDING INTERMEDIATE OF FIRST OR ZEROTH ORDER####
+
+def inserted_diag_Sv_t1(t1,II_vv):
+  R_ia = np.einsum('ca,ic->ia',II_vv,t1)  
+  return R_ia
+
+  R_ia = None
   II_vv = None
   gc.collect() 
 
