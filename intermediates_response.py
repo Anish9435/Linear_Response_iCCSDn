@@ -180,16 +180,16 @@ def w2_int_Sv_response(Sv):
                      ##Intermediates for norm calculation of connected triple excitation##
 ##-----------------------------------------------------------------------------------------------------------##
 
-def int_norm_so(So):
+def int_norm_so(x,y):
   II_int_so = np.zeros((occ,occ))
-  II_int_so[occ-o_act:occ,occ-o_act:occ] += -2.0*np.einsum('wclk,klcv->wv',np.transpose(So),So) + np.einsum('wclk,lkcv->wv',np.transpose(So),So)
+  II_int_so[occ-o_act:occ,occ-o_act:occ] += -2.0*np.einsum('wclk,klcv->wv',np.transpose(x),y) + np.einsum('wclk,lkcv->wv',np.transpose(x),y)
 
   return II_int_so
   gc.collect()
 
-def int_norm_sv(Sv):
+def int_norm_sv(x,y):
   II_int_sv = np.zeros((virt,virt))
-  II_int_sv[:v_act,:v_act] += 2.0*np.einsum('dcxk,kucd->ux',np.transpose(Sv),Sv) - np.einsum('dcxk,kudc->ux',np.transpose(Sv),Sv)
+  II_int_sv[:v_act,:v_act] += 2.0*np.einsum('dcxk,kucd->ux',np.transpose(x),y) - np.einsum('dcxk,kudc->ux',np.transpose(x),y)
 
   return II_int_sv
   gc.collect()
