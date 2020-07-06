@@ -266,12 +266,16 @@ def guess_X_man(occ,virt,o_act,v_act,nroot):
 ##---------------------------------------------------------------------##
 
 
-def norm(t1,t2,II_int_so,II_int_sv):
+def norm_ccsd(t1,t2):
   norm = 2.0*np.einsum('ia,ia',t1,t1)
   norm += 2.0*np.einsum('ijab,ijab',t2,t2) - np.einsum('ijab,ijba',t2,t2)
-  if(tiCCSD):
-    norm = -2.0*np.einsum('edwm,wv,vmed',np.transpose(t2),II_int_so,t2) + np.einsum('dewm,wv,vmed',np.transpose(t2),II_int_so,t2) 
-    norm += 2.0*np.einsum('xelm,ux,lmue',np.transpose(t2),II_int_sv,t2) - np.einsum('xelm,ux,mlue',np.transpose(t2),II_int_sv,t2) 
+  return norm
+
+def norm_iccsd(t1,t2,II_int_so,II_int_sv):
+  norm = 2.0*np.einsum('ia,ia',t1,t1)
+  norm += 2.0*np.einsum('ijab,ijab',t2,t2) - np.einsum('ijab,ijba',t2,t2)
+  norm += -2.0*np.einsum('edwm,wv,vmed',np.transpose(t2),II_int_so,t2) + np.einsum('dewm,wv,vmed',np.transpose(t2),II_int_so,t2) 
+  norm += 2.0*np.einsum('xelm,ux,lmue',np.transpose(t2),II_int_sv,t2) - np.einsum('xelm,ux,mlue',np.transpose(t2),II_int_sv,t2) 
   return norm    
 
                          ##---------------------------------------------------------------------------------------------------------------##
