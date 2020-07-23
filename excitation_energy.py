@@ -665,20 +665,12 @@ def calc_excitation_energy(isym, nroot):
           dict_x_So[r,iroot] += np.linalg.multi_dot([dict_coeff_total[iroot][loc],dict_So[m,iroot]])
           dict_x_Sv[r,iroot] += np.linalg.multi_dot([dict_coeff_total[iroot][loc],dict_Sv[m,iroot]])
 
-      #lin_norm = 2.0*np.einsum('ia,ia',dict_x_t1[r,iroot],dict_x_t1[r,iroot])
-      #lin_norm += 2.0*np.einsum('ijab,ijab',dict_x_t2[r,iroot],dict_x_t2[r,iroot]) - np.einsum('ijab,ijba',dict_x_t2[r,iroot],dict_x_t2[r,iroot])
-
-      #if (tiCCSD):
-      #  lin_norm += 2.0*np.einsum('ijav,ijav',dict_x_So[r,iroot],dict_x_So[r,iroot]) - np.einsum('ijav,jiav',dict_x_So[r,iroot],dict_x_So[r,iroot])
-      #  lin_norm += 2.0*np.einsum('iuab,iuab',dict_x_Sv[r,iroot],dict_x_Sv[r,iroot]) - np.einsum('iuab,iuba',dict_x_Sv[r,iroot],dict_x_Sv[r,iroot])
-
-      II_int_so = intermediates_response.int_norm_so(dict_x_So[r,iroot],dict_x_So[r,iroot])
-      II_int_sv = intermediates_response.int_norm_sv(dict_x_Sv[r,iroot],dict_x_Sv[r,iroot])
-      
-      lin_norm = davidson.norm_ccsd(dict_x_t1[r,iroot],dict_x_t1[r,iroot],dict_x_t2[r,iroot],dict_x_t2[r,iroot]) 
-
       if (tiCCSD):
-        lin_norm = davidson.norm_iccsd(dict_x_t1[r,iroot],dict_x_t1[r,iroot],dict_x_t2[r,iroot],dict_x_t2[r,iroot],II_int_so,II_int_sv)
+        II_int_so = intermediates_response.int_norm_so(dict_x_So[r,iroot],dict_x_So[r,iroot])
+        II_int_sv = intermediates_response.int_norm_sv(dict_x_Sv[r,iroot],dict_x_Sv[r,iroot])
+        lin_norm = davidson.norm_iccsd(dict_x_t1[r,iroot],dict_x_t1[r,iroot],dict_x_t2[r,iroot],dict_x_t2[r,iroot],II_int_so, II_int_sv)
+      else:
+        lin_norm = davidson.norm_ccsd(dict_x_t1[r,iroot],dict_x_t1[r,iroot],dict_x_t2[r,iroot],dict_x_t2[r,iroot]) 
 
       norm = math.sqrt(lin_norm)
 
@@ -687,9 +679,15 @@ def calc_excitation_energy(isym, nroot):
         dict_x_t2[r,iroot] = dict_x_t2[r,iroot]/norm
       
         if (tiCCSD):
-          dict_x_So[r,iroot] = dict_x_So[r,iroot]/norm
-          dict_x_Sv[r,iroot] = dict_x_Sv[r,iroot]/norm
+          dict_x_So[r,iroot] = dict_x_So[r,iroot]#/norm
+          dict_x_Sv[r,iroot] = dict_x_Sv[r,iroot]#/norm
       
+      II_int_so = intermediates_response.int_norm_so(dict_x_So[r,iroot],dict_x_So[r,iroot])
+      II_int_sv = intermediates_response.int_norm_sv(dict_x_Sv[r,iroot],dict_x_Sv[r,iroot])
+      #lin_norm = davidson.norm_iccsd_temp(dict_x_t1[r,iroot],dict_x_t1[r,iroot],dict_x_t2[r,iroot],dict_x_t2[r,iroot],dict_x_So[r,iroot],dict_x_So[r,iroot],dict_x_Sv[r,iroot],dict_x_Sv[r,iroot])
+      lin_norm = davidson.norm_iccsd(dict_x_t1[r,iroot],dict_x_t1[r,iroot],dict_x_t2[r,iroot],dict_x_t2[r,iroot],II_int_so, II_int_sv)
+      print "norm:", lin_norm
+
 ##---------------------------------------------------------------------------##
                        #Formation of residual matrix#
 ##---------------------------------------------------------------------------##
@@ -849,74 +847,57 @@ def calc_excitation_energy(isym, nroot):
      
       for m in range(0,r+1):
         for jroot in range(0,nroot):
-          II_ovrlap_so = intermediates_response.int_norm_so(dict_So_2[iroot],dict_So[m,jroot]) 
-          II_ovrlap_sv = intermediates_response.int_norm_sv(dict_Sv_2[iroot],dict_Sv[m,jroot]) 
-
-          ovrlap = davidson.norm_ccsd(dict_t1_2[iroot],dict_t1[m,jroot],dict_t2_2[iroot],dict_t2[m,jroot])
-
           if (tiCCSD):
+            II_ovrlap_so = intermediates_response.int_norm_so(dict_So_2[iroot],dict_So[m,jroot]) 
+            II_ovrlap_sv = intermediates_response.int_norm_sv(dict_Sv_2[iroot],dict_Sv[m,jroot]) 
             ovrlap = davidson.norm_iccsd(dict_t1_2[iroot],dict_t1[m,jroot],dict_t2_2[iroot],dict_t2[m,jroot],II_ovrlap_so,II_ovrlap_sv)
-
-          #ovrlap = 2.0*np.einsum('ia,ia',dict_t1_2[iroot],dict_t1[m,jroot]) 
-          #ovrlap += 2.0*np.einsum('ijab,ijab',dict_t2_2[iroot],dict_t2[m,jroot]) - np.einsum('ijab,ijba',dict_t2_2[iroot],dict_t2[m,jroot]) 
-
-          #if (tiCCSD):
-            #ovrlap += 2.0*np.einsum('ijav,ijav',dict_So_2[iroot],dict_So[m,jroot]) - np.einsum('ijav,jiav',dict_So_2[iroot],dict_So[m,jroot]) 
-            #ovrlap += 2.0*np.einsum('iuab,iuab',dict_Sv_2[iroot],dict_Sv[m,jroot]) - np.einsum('iuab,iuba',dict_Sv_2[iroot],dict_Sv[m,jroot])
-
-
+          #  ovrlap = davidson.norm_iccsd_temp(dict_t1_2[iroot],dict_t1[m,jroot],dict_t2_2[iroot],dict_t2[m,jroot],dict_So_2[iroot],dict_So[m,jroot],dict_Sv_2[iroot],dict_Sv[m,jroot])
+          else:
+            ovrlap = davidson.norm_ccsd(dict_t1_2[iroot],dict_t1[m,jroot],dict_t2_2[iroot],dict_t2[m,jroot])
+          
           dict_ortho_t1[iroot] += -ovrlap*dict_t1[m,jroot]    #orthogonalization of same root of different iterations
           dict_ortho_t2[iroot] += -ovrlap*dict_t2[m,jroot]  
        
-          if (tiCCSD):
-            dict_ortho_So[iroot] += -ovrlap*dict_So[m,jroot]  
-            dict_ortho_Sv[iroot] += -ovrlap*dict_Sv[m,jroot]  
+          #if (tiCCSD):
+          #  dict_ortho_So[iroot] += -ovrlap*dict_So[m,jroot]  
+          #  dict_ortho_Sv[iroot] += -ovrlap*dict_Sv[m,jroot]  
 
 ##--------------------------------------------------------------------------##
          #Orthonormalization of the vectors of the same iteration# 
 ##--------------------------------------------------------------------------##
 
       for jroot in range(0,iroot):
-        II_overlap_so = intermediates_response.int_norm_so(dict_norm_So[jroot],dict_So_2[iroot])
-        II_overlap_sv = intermediates_response.int_norm_sv(dict_norm_Sv[jroot],dict_Sv_2[iroot])
-
-        overlap = davidson.norm_ccsd(dict_norm_t1[jroot],dict_t1_2[iroot],dict_norm_t2[jroot],dict_t2_2[iroot])
-
         if (tiCCSD):
-          overlap = davidson.norm_iccsd(dict_norm_t1[jroot],dict_t1_2[iroot],dict_norm_t2[jroot],dict_t2_2[iroot],II_overlap_so,II_overlap_sv)
-
-        #overlap = 2.0*np.einsum('ia,ia',dict_norm_t1[jroot],dict_t1_2[iroot]) 
-        #overlap += 2.0*np.einsum('ijab,ijab',dict_norm_t2[jroot],dict_t2_2[iroot]) - np.einsum('ijab,ijba',dict_norm_t2[jroot],dict_t2_2[iroot]) 
-
-        #if (tiCCSD):
-        #  overlap += 2.0*np.einsum('ijav,ijav',dict_norm_So[jroot],dict_So_2[iroot]) - np.einsum('ijav,jiav',dict_norm_So[jroot],dict_So_2[iroot]) 
-        #  overlap += 2.0*np.einsum('iuab,iuab',dict_norm_Sv[jroot],dict_Sv_2[iroot]) - np.einsum('iuab,iuba',dict_norm_Sv[jroot],dict_Sv_2[iroot])
-
+         II_overlap_so = intermediates_response.int_norm_so(dict_norm_So[jroot],dict_So_2[iroot])
+         II_overlap_sv = intermediates_response.int_norm_sv(dict_norm_Sv[jroot],dict_Sv_2[iroot])
+         overlap = davidson.norm_iccsd(dict_norm_t1[jroot],dict_t1_2[iroot],dict_norm_t2[jroot],dict_t2_2[iroot],II_overlap_so,II_overlap_sv)
+        #  overlap = davidson.norm_iccsd_temp(dict_norm_t1[jroot],dict_t1_2[iroot],dict_norm_t2[jroot],dict_t2_2[iroot],dict_norm_So[jroot],dict_So_2[iroot],dict_norm_Sv[jroot],dict_Sv_2[iroot])
+        else:
+          overlap = davidson.norm_ccsd(dict_norm_t1[jroot],dict_t1_2[iroot],dict_norm_t2[jroot],dict_t2_2[iroot])
+         
         dict_ortho_t1[iroot] += -overlap*dict_norm_t1[jroot]   #orthogonalization of different roots of same iteration
         dict_ortho_t2[iroot] += -overlap*dict_norm_t2[jroot]
 
-        if (tiCCSD):
-          dict_ortho_So[iroot] += -overlap*dict_norm_So[jroot]  
-          dict_ortho_Sv[iroot] += -overlap*dict_norm_Sv[jroot]  
+        #if (tiCCSD):
+        #  dict_ortho_So[iroot] += -overlap*dict_norm_So[jroot]  
+        #  dict_ortho_Sv[iroot] += -overlap*dict_norm_Sv[jroot]  
 
-
-      #ortho_norm = 2.0*np.einsum('ia,ia',dict_ortho_t1[iroot],dict_ortho_t1[iroot])
-      #ortho_norm += 2.0*np.einsum('ijab,ijab',dict_ortho_t2[iroot],dict_ortho_t2[iroot]) - np.einsum('ijab,ijba',dict_ortho_t2[iroot],dict_ortho_t2[iroot])
-
-      #if (tiCCSD):
-      #  ortho_norm += 2.0*np.einsum('ijav,ijav',dict_ortho_So[iroot],dict_ortho_So[iroot]) - np.einsum('ijav,jiav',dict_ortho_So[iroot],dict_ortho_So[iroot])
-      #  ortho_norm += 2.0*np.einsum('iuab,iuab',dict_ortho_Sv[iroot],dict_ortho_Sv[iroot]) - np.einsum('iuab,iuba',dict_ortho_Sv[iroot],dict_ortho_Sv[iroot])
-      
-      #if (inp.LR_type == 'CCSD'): 
-      #  ortho_norm = davidson.norm_ccsd(dict_ortho_t1[iroot],dict_ortho_t2[iroot])
-
-      II_so = intermediates_response.int_norm_so(dict_ortho_So[iroot],dict_ortho_So[iroot])
-      II_sv = intermediates_response.int_norm_sv(dict_ortho_Sv[iroot],dict_ortho_Sv[iroot])
-      
-      ortho_norm = davidson.norm_ccsd(dict_ortho_t1[iroot],dict_ortho_t1[iroot],dict_ortho_t2[iroot],dict_ortho_t2[iroot]) 
+      for m in range(0,r+1):
+        for jroot in range(0,nroot):
+          if (tiCCSD):
+            II_temp_so = intermediates_response.int_norm_so(dict_ortho_So[iroot],dict_So[m,jroot]) 
+            II_temp_sv = intermediates_response.int_norm_sv(dict_ortho_Sv[iroot],dict_Sv[m,jroot]) 
+            temp = davidson.norm_iccsd(dict_ortho_t1[iroot],dict_t1[m,jroot],dict_ortho_t2[iroot],dict_t2[m,jroot],II_temp_so,II_temp_sv)
+            print "overlap", temp, m , iroot, jroot
 
       if (tiCCSD):
+        II_so = intermediates_response.int_norm_so(dict_ortho_So[iroot],dict_ortho_So[iroot])
+        II_sv = intermediates_response.int_norm_sv(dict_ortho_Sv[iroot],dict_ortho_Sv[iroot])
         ortho_norm = davidson.norm_iccsd(dict_ortho_t1[iroot],dict_ortho_t1[iroot],dict_ortho_t2[iroot],dict_ortho_t2[iroot],II_so,II_sv)
+      #if (tiCCSD):
+      #  ortho_norm = davidson.norm_iccsd_temp(dict_ortho_t1[iroot],dict_ortho_t1[iroot],dict_ortho_t2[iroot],dict_ortho_t2[iroot],dict_ortho_So[iroot],dict_ortho_So[iroot],dict_ortho_Sv[iroot],dict_ortho_Sv[iroot])
+      else:
+        ortho_norm = davidson.norm_ccsd(dict_ortho_t1[iroot],dict_ortho_t1[iroot],dict_ortho_t2[iroot],dict_ortho_t2[iroot]) 
 
       norm_total = math.sqrt(ortho_norm)
 
@@ -925,13 +906,19 @@ def calc_excitation_energy(isym, nroot):
         dict_norm_t2[iroot] = dict_ortho_t2[iroot]/norm_total
 
         if (tiCCSD):
-          dict_norm_So[iroot] = dict_ortho_So[iroot]/norm_total
-          dict_norm_Sv[iroot] = dict_ortho_Sv[iroot]/norm_total
+          dict_norm_So[iroot] = dict_ortho_So[iroot]#/norm_total
+          dict_norm_Sv[iroot] = dict_ortho_Sv[iroot]#/norm_total
 
       else:  
         print 'Error in calculation: Generating vector with zero norm'
         quit()
   
+      II_so = intermediates_response.int_norm_so(dict_norm_So[iroot],dict_norm_So[iroot])
+      II_sv = intermediates_response.int_norm_sv(dict_norm_Sv[iroot],dict_norm_Sv[iroot])
+      ortho_norm = davidson.norm_iccsd(dict_norm_t1[iroot],dict_norm_t1[iroot],dict_norm_t2[iroot],dict_norm_t2[iroot],II_so,II_sv)
+      #ortho_norm = davidson.norm_iccsd_temp(dict_norm_t1[iroot],dict_norm_t1[iroot],dict_norm_t2[iroot],dict_norm_t2[iroot],dict_norm_So[iroot],dict_norm_So[iroot],dict_norm_Sv[iroot],dict_norm_Sv[iroot])
+      print "norm2:",ortho_norm
+
 ##----------------------------------------------------------------------------##
                 #updating value of X for the next iteration#
 ##----------------------------------------------------------------------------##
@@ -956,20 +943,12 @@ def calc_excitation_energy(isym, nroot):
                     #Sanity check to find the final norm#
 ##----------------------------------------------------------------------------##
   
-      #nrm = 2.0*np.einsum('ia,ia',dict_t1[r+1,iroot],dict_t1[r+1,iroot]) 
-      #nrm += 2.0*np.einsum('ijab,ijab',dict_t2[r+1,iroot],dict_t2[r+1,iroot]) - np.einsum('ijab,ijba',dict_t2[r+1,iroot],dict_t2[r+1,iroot]) 
-
-      #if (tiCCSD):
-      #  nrm += 2.0*np.einsum('ijav,ijav',dict_So[r+1,iroot],dict_So[r+1,iroot]) - np.einsum('ijav,jiav',dict_So[r+1,iroot],dict_So[r+1,iroot]) 
-      #  nrm += 2.0*np.einsum('iuab,iuab',dict_Sv[r+1,iroot],dict_Sv[r+1,iroot]) - np.einsum('iuab,iuba',dict_Sv[r+1,iroot],dict_Sv[r+1,iroot])
-
-      II_norm_so = intermediates_response.int_norm_so(dict_So[r+1,iroot],dict_So[r+1,iroot])
-      II_norm_sv = intermediates_response.int_norm_sv(dict_Sv[r+1,iroot],dict_Sv[r+1,iroot])
-      
-      nrm = davidson.norm_ccsd(dict_t1[r+1,iroot],dict_t1[r+1,iroot],dict_t2[r+1,iroot],dict_t2[r+1,iroot]) 
-
       if (tiCCSD):
+        II_norm_so = intermediates_response.int_norm_so(dict_So[r+1,iroot],dict_So[r+1,iroot])
+        II_norm_sv = intermediates_response.int_norm_sv(dict_Sv[r+1,iroot],dict_Sv[r+1,iroot])
         nrm = davidson.norm_iccsd(dict_t1[r+1,iroot],dict_t1[r+1,iroot],dict_t2[r+1,iroot],dict_t2[r+1,iroot],II_norm_so,II_norm_sv)
+      else:
+        nrm = davidson.norm_ccsd(dict_t1[r+1,iroot],dict_t1[r+1,iroot],dict_t2[r+1,iroot],dict_t2[r+1,iroot]) 
 
       print "final norm:", iroot, nrm 
 

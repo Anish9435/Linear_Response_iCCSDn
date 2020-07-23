@@ -262,37 +262,45 @@ def guess_X_man(occ,virt,o_act,v_act,nroot):
   return dict_t1,dict_t2,dict_So,dict_Sv
 
 ##---------------------------------------------------------------------##
-            #Calculation of norm in excited state#
-##---------------------------------------------------------------------##
-
-
-def norm_ccsd(t1,t2):
-  norm = 2.0*np.einsum('ia,ia',t1,t1)
-  norm += 2.0*np.einsum('ijab,ijab',t2,t2) - np.einsum('ijab,ijba',t2,t2)
-  return norm
-
-def norm_iccsd(t1,t2,II_int_so,II_int_sv):
-  norm = 2.0*np.einsum('ia,ia',t1,t1)
-  norm += 2.0*np.einsum('ijab,ijab',t2,t2) - np.einsum('ijab,ijba',t2,t2)
-  norm += -2.0*np.einsum('edwm,wv,vmed',np.transpose(t2),II_int_so,t2) + np.einsum('dewm,wv,vmed',np.transpose(t2),II_int_so,t2) 
-  norm += 2.0*np.einsum('xelm,ux,lmue',np.transpose(t2),II_int_sv,t2) - np.einsum('xelm,ux,mlue',np.transpose(t2),II_int_sv,t2) 
-  return norm    
-
-##---------------------------------------------------------------------##
-            #Calculation of overlap in excited state#
+            #Calculation of norm and overlap in excited state#
 ##---------------------------------------------------------------------##
 
 def norm_ccsd(a,b,c,d):
   norm = 2.0*np.einsum('ia,ia',a,b)
   norm += 2.0*np.einsum('ijab,ijab',c,d) - np.einsum('ijab,ijba',c,d)
+
   return norm
+  gc.collect()
 
 def norm_iccsd(a,b,c,d,II_int_so,II_int_sv):
   norm = 2.0*np.einsum('ia,ia',a,b)
-  norm += 2.0*np.einsum('ijab,ijab',c,d) - np.einsum('ijab,ijba',c,d)
+  norm += 2.0*np.einsum('ijab,ijab',c,d) - np.einsum('ijba,ijab',c,d)
   norm += -2.0*np.einsum('edwm,wv,vmed',np.transpose(c),II_int_so,d) + np.einsum('dewm,wv,vmed',np.transpose(c),II_int_so,d) 
   norm += 2.0*np.einsum('xelm,ux,lmue',np.transpose(c),II_int_sv,d) - np.einsum('xelm,ux,mlue',np.transpose(c),II_int_sv,d) 
-  return norm    
+  
+  return norm 
+  gc.collect()
+
+##---------------------------------------------------------------------##
+                       #Previous formulation#
+##---------------------------------------------------------------------##
+
+def norm_ccsd_temp(a,b,c,d):
+  norm = 2.0*np.einsum('ia,ia',a,b)
+  norm += 2.0*np.einsum('ijab,ijab',c,d) - np.einsum('ijab,ijba',c,d)
+
+  return norm
+  gc.collect()
+
+def norm_iccsd_temp(a,b,c,d):
+  norm = 2.0*np.einsum('ia,ia',a,b)
+  norm += 2.0*np.einsum('ijab,ijab',c,d) - np.einsum('ijba,ijab',c,d)
+  #norm += 2.0*np.einsum('ijav,ijav',e,f) - np.einsum('ijav,jiav',e,f)
+  #norm += 2.0*np.einsum('iuab,iuab',g,h) - np.einsum('iuab,iuba',g,h)
+
+  return norm 
+  gc.collect()
+
 
                          ##---------------------------------------------------------------------------------------------------------------##
                                                                               #THE END#
