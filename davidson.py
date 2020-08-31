@@ -262,43 +262,39 @@ def guess_X_man(occ,virt,o_act,v_act,nroot):
   return dict_t1,dict_t2,dict_So,dict_Sv
 
 ##---------------------------------------------------------------------##
-            #Calculation of norm and overlap in excited state#
+                       #Norm calculation#
 ##---------------------------------------------------------------------##
 
-def norm_ccsd(a,b,c,d):
+def normalize_ccsd(a,b,c,d):
   norm = 2.0*np.einsum('ia,ia',a,b)
   norm += 2.0*np.einsum('ijab,ijab',c,d) - np.einsum('ijab,ijba',c,d)
 
   return norm
   gc.collect()
 
-def norm_iccsd(a,b,c,d,II_int_so,II_int_sv):
+def normalize_iccsd(a,b,c,d,e,f,g,h):
   norm = 2.0*np.einsum('ia,ia',a,b)
   norm += 2.0*np.einsum('ijab,ijab',c,d) - np.einsum('ijba,ijab',c,d)
-  norm += -2.0*np.einsum('edwm,wv,vmed',np.transpose(c),II_int_so,d) + np.einsum('dewm,wv,vmed',np.transpose(c),II_int_so,d) 
-  norm += 2.0*np.einsum('xelm,ux,lmue',np.transpose(c),II_int_sv,d) - np.einsum('xelm,ux,mlue',np.transpose(c),II_int_sv,d) 
-  
+  norm += 2.0*np.einsum('ijav,ijav',e,f) - np.einsum('ijav,jiav',e,f)
+  norm += 2.0*np.einsum('iuab,iuab',g,h) - np.einsum('iuab,iuba',g,h)
+
   return norm 
   gc.collect()
 
 ##---------------------------------------------------------------------##
-                       #Previous formulation#
+                #Norm calculation for individual vector#
 ##---------------------------------------------------------------------##
 
-def norm_ccsd_temp(a,b,c,d):
-  norm = 2.0*np.einsum('ia,ia',a,b)
-  norm += 2.0*np.einsum('ijab,ijab',c,d) - np.einsum('ijab,ijba',c,d)
+def norm_sep_t1(a,b):
+  norm_t1 = 2.0*np.einsum('ia,ia',a,b)
 
-  return norm
+  return norm_t1
   gc.collect()
 
-def norm_iccsd_temp(a,b,c,d):
-  norm = 2.0*np.einsum('ia,ia',a,b)
-  norm += 2.0*np.einsum('ijab,ijab',c,d) - np.einsum('ijba,ijab',c,d)
-  #norm += 2.0*np.einsum('ijav,ijav',e,f) - np.einsum('ijav,jiav',e,f)
-  #norm += 2.0*np.einsum('iuab,iuab',g,h) - np.einsum('iuab,iuba',g,h)
+def norm_sep(c,d):
+  norm_x = 2.0*np.einsum('ijab,ijab',c,d) - np.einsum('ijba,ijab',c,d)
 
-  return norm 
+  return norm_x
   gc.collect()
 
 
